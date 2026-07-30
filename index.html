@@ -235,9 +235,24 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-lg border text-xs text-slate-600">
-                    <div>خط العرض (Lat): <span id="disp-lat" class="font-bold">24.25000</span></div>
-                    <div>خط الطول (Lng): <span id="disp-lng" class="font-bold">55.78000</span></div>
+                <!-- قسم الإحداثيات القابل للتعديل -->
+                <div class="bg-slate-50 p-3 rounded-lg border space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                            <i class="fa-solid fa-location-crosshairs text-amber-500"></i> إحداثيات الموقع الجغرافي
+                        </label>
+                        <span class="text-[10px] text-slate-500 font-normal">يمكنك الضغط على الخريطة لتحديدها أو تعديلها يدويًا</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-600 block mb-0.5">خط العرض (Latitude)</label>
+                            <input type="number" step="any" id="lat" required class="w-full border p-2 rounded-lg text-xs bg-white font-mono focus:ring-1 focus:ring-blue-950" placeholder="24.25000">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-600 block mb-0.5">خط الطول (Longitude)</label>
+                            <input type="number" step="any" id="lng" required class="w-full border p-2 rounded-lg text-xs bg-white font-mono focus:ring-1 focus:ring-blue-950" placeholder="55.78000">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-3 border-t">
@@ -256,7 +271,6 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let map, markersGroup, currentTileLayer;
-        let selectedLat = 24.25, selectedLng = 55.78;
         let isSatellite = false;
         let globalOrders = [];
 
@@ -284,9 +298,9 @@
             markersGroup = L.layerGroup().addTo(map);
 
             map.on('click', function(e) {
-                selectedLat = e.latlng.lat.toFixed(5);
-                selectedLng = e.latlng.lng.toFixed(5);
-                openModalForCreate(selectedLat, selectedLng);
+                const lat = e.latlng.lat.toFixed(5);
+                const lng = e.latlng.lng.toFixed(5);
+                openModalForCreate(lat, lng);
             });
         }
 
@@ -351,10 +365,8 @@
             const nextNum = globalOrders.length > 0 ? Math.max(...globalOrders.map(o => o.id)) + 1 : 101;
             document.getElementById('code').value = `WO-2026-${nextNum}`;
             
-            selectedLat = lat;
-            selectedLng = lng;
-            document.getElementById('disp-lat').innerText = selectedLat;
-            document.getElementById('disp-lng').innerText = selectedLng;
+            document.getElementById('lat').value = lat;
+            document.getElementById('lng').value = lng;
 
             toggleModal();
         }
@@ -375,10 +387,8 @@
             document.getElementById('priority').value = o.priority;
             document.getElementById('status').value = o.status;
 
-            selectedLat = o.lat || 24.25;
-            selectedLng = o.lng || 55.78;
-            document.getElementById('disp-lat').innerText = selectedLat;
-            document.getElementById('disp-lng').innerText = selectedLng;
+            document.getElementById('lat').value = o.lat || 24.25;
+            document.getElementById('lng').value = o.lng || 55.78;
 
             toggleModal();
         }
@@ -396,8 +406,8 @@
                 cost: parseFloat(document.getElementById('cost').value || 0),
                 priority: document.getElementById('priority').value,
                 status: document.getElementById('status').value,
-                lat: parseFloat(selectedLat),
-                lng: parseFloat(selectedLng)
+                lat: parseFloat(document.getElementById('lat').value),
+                lng: parseFloat(document.getElementById('lng').value)
             };
 
             if (editId) {
@@ -406,7 +416,7 @@
                     .update(payload)
                     .eq('id', editId);
 
-                if (!error) showToast('تم تعديل أمر العمل سحابياً بنجاح');
+                if (!error) showToast('تم تعديل أمر العمل والإحداثيات بنجاح');
             } else {
                 payload.code = document.getElementById('code').value;
                 const { error } = await supabaseClient
@@ -461,13 +471,12 @@
                 try {
                     const imported = JSON.parse(evt.target.result);
                     if (Array.isArray(imported)) {
-                        // رفع العناصر غير الموجوة بالسحابة
                         const { error } = await supabaseClient.from('orders').upsert(imported);
                         if (!error) {
                             showToast('تم استيراد البيانات ورفعها للسحابة بنجاح');
                             fetchOrders();
                         } else {
-                            showToast('حدث خطأ أثناء رفـع البيانات المستوردة', true);
+                            showToast('حدث خطأ أثناء رفع البيانات المستوردة', true);
                         }
                     }
                 } catch (err) {
@@ -518,6 +527,7 @@
                                 <span style="font-size: 11px; background: #eee; padding: 2px 5px; border-radius: 3px;"><b>${o.code}</b></span><br>
                                 <b>${o.title}</b><br>
                                 <span style="font-size: 12px; color: #555;">الولاية: ${o.wilayat} (${o.region || ''})</span><br>
+                                الإحداثيات: <code style="font-size:10px">${o.lat}, ${o.lng}</code><br>
                                 حالة العمل: <b>${o.status}</b> | التكلفة: <b>${o.cost} ر.ع</b>
                             </div>
                         `);
