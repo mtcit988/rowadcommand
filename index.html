@@ -18,39 +18,49 @@
     <style> 
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 380px; width: 100%; z-index: 1; }
+        /* Focus styles for Keyboard Accessibility */
+        *:focus-visible {
+            outline: 3px solid #f59e0b !important;
+            outline-offset: 2px;
+        }
         @media print {
             header, .no-print, #map, .stats-container { display: none !important; }
             body { background: #fff; padding: 0; }
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 pb-12">
+<body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 left-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toast-msg" class="text-xs font-bold">تم تنفيذ العملية بنجاح</span>
+    <!-- Toast Notification / Live Region for Screen Readers -->
+    <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 left-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg" aria-hidden="true"></i>
+        <span id="toast-msg" class="text-xs md:text-sm font-bold">تم تنفيذ العملية بنجاح</span>
     </div>
 
     <!-- Header -->
-    <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex justify-between items-center sticky top-0 z-40">
+    <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40">
         <div class="flex items-center gap-3">
-            <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
+            <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm" aria-label="شعار رُواد">ROWADS</span>
             <div>
                 <h1 class="text-base md:text-lg font-bold">منظومة رُواد الشاملة لإدارة وصيانة الطرق</h1>
-                <p class="text-xs text-slate-300">دائرة الطرق - محافظة البريمي <span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-[10px] mr-2 font-bold">متصل سحابياً</span></p>
+                <p class="text-xs text-slate-300">دائرة الطرق - محافظة البريمي 
+                    <span class="inline-flex items-center gap-1 bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] mr-2 font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> متصل سحابياً
+                    </span>
+                </p>
             </div>
         </div>
-        <div class="flex flex-wrap gap-2 no-print">
-            <label class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow cursor-pointer transition flex items-center gap-1.5">
-                <i class="fa-solid fa-file-import"></i> استيراد
-                <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+        <div class="flex flex-wrap items-center gap-2 no-print">
+            <label class="bg-emerald-700 hover:bg-emerald-600 focus-within:ring-2 focus-within:ring-white text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow cursor-pointer transition flex items-center gap-2">
+                <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+                <span>استيراد</span>
+                <input type="file" id="import-file" accept=".json" class="sr-only" onchange="importData(event)" aria-label="استيراد ملف JSON">
             </label>
-            <button onclick="exportData()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-1.5">
-                <i class="fa-solid fa-file-export"></i> تصدير JSON
+            <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-2">
+                <i class="fa-solid fa-file-export" aria-hidden="true"></i> تصدير JSON
             </button>
-            <button onclick="openModalForCreate()" class="bg-amber-500 hover:bg-amber-400 text-blue-950 font-bold px-4 py-2 rounded-lg text-xs md:text-sm shadow transition">
-                <i class="fa-solid fa-plus"></i> إنشاء أمر عمل جديد
+            <button onclick="openModalForCreate()" class="bg-amber-500 hover:bg-amber-400 text-blue-950 font-black px-4 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-2">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> إنشاء أمر عمل جديد
             </button>
         </div>
     </header>
@@ -58,123 +68,134 @@
     <main class="max-w-7xl mx-auto mt-6 px-4 space-y-6">
 
         <!-- الإحصائيات الشاملة -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 stats-container">
-            <div class="bg-white p-4 rounded-xl border shadow-sm">
-                <p class="text-xs text-slate-500 font-bold">إجمالي الأوامر المسجلة</p>
-                <h3 id="stat-total" class="text-2xl md:text-3xl font-black text-blue-950 mt-1">0</h3>
+        <section aria-label="لوحة الإحصائيات" class="grid grid-cols-2 md:grid-cols-4 gap-4 stats-container">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">إجمالي الأوامر المسجلة</p>
+                <h2 id="stat-total" class="text-2xl md:text-3xl font-black text-blue-950 mt-1">0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm">
-                <p class="text-xs text-slate-500 font-bold">أوامر قيد التنفيذ / مفتوحة</p>
-                <h3 id="stat-open" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">0</h3>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">أوامر قيد التنفيذ / مفتوحة</p>
+                <h2 id="stat-open" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm">
-                <p class="text-xs text-slate-500 font-bold">الأوامر المكتملة والمغلقة</p>
-                <h3 id="stat-closed" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">0</h3>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">الأوامر المكتملة والمغلقة</p>
+                <h2 id="stat-closed" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl border shadow-sm">
-                <p class="text-xs text-slate-500 font-bold">إجمالي الميزانية التقديرية</p>
-                <h3 id="stat-cost" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">0 ر.ع</h3>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">إجمالي الميزانية التقديرية</p>
+                <h2 id="stat-cost" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">0 ر.ع</h2>
             </div>
-        </div>
+        </section>
 
         <!-- الخريطة التفاعلية -->
-        <div class="bg-white rounded-xl border shadow-sm overflow-hidden p-4 no-print">
+        <section aria-label="الخريطة التفاعلية" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-4 no-print">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
                 <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-map-location-dot text-amber-500"></i> الخريطة التفاعلية لأوامر العمل ومواقع الصيانة
+                    <i class="fa-solid fa-map-location-dot text-amber-500" aria-hidden="true"></i> الخريطة التفاعلية لأوامر العمل ومواقع الصيانة
                 </h2>
                 <div class="flex gap-2">
-                    <button onclick="locateUser()" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-3 py-1 rounded-lg text-xs font-bold transition">
-                        <i class="fa-solid fa-crosshairs"></i> موقعي الحالي
+                    <button onclick="locateUser()" class="bg-blue-100 hover:bg-blue-200 text-blue-950 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-crosshairs" aria-hidden="true"></i> موقعي الحالي
                     </button>
-                    <button onclick="toggleMapTile()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg text-xs font-bold transition">
-                        <i class="fa-solid fa-layer-group"></i> تغيير نمط الخريطة
+                    <button onclick="toggleMapTile()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group" aria-hidden="true"></i> تغيير نمط الخريطة
                     </button>
                 </div>
             </div>
-            <div id="map" class="rounded-lg border"></div>
-        </div>
+            <div id="map" role="region" aria-label="خريطة مواقع الصيانة" class="rounded-lg border border-slate-300"></div>
+        </section>
 
         <!-- شريط البحث والتصفية -->
-        <div class="bg-white p-4 rounded-xl border shadow-sm space-y-3 no-print">
-            <div class="flex items-center justify-between">
-                <h3 class="font-bold text-xs text-slate-500"><i class="fa-solid fa-filter text-amber-500"></i> أدوات البحث والتصفية</h3>
-            </div>
+        <section aria-label="أدوات البحث والفلترة" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 no-print">
+            <h3 class="font-bold text-xs text-slate-600 flex items-center gap-1.5">
+                <i class="fa-solid fa-filter text-amber-500" aria-hidden="true"></i> أدوات البحث والتصفية
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <input type="text" id="search-input" oninput="render()" placeholder="بحث بالوصف، المرجع، المقاول..." class="border p-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-950">
-                
-                <select id="filter-wilayat" onchange="render()" class="border p-2 rounded-lg text-xs bg-white">
-                    <option value="">جميع الولايات</option>
-                    <option value="البريمي">البريمي</option>
-                    <option value="محضة">محضة</option>
-                    <option value="السنينة">السنينة</option>
-                </select>
-
-                <select id="filter-status" onchange="render()" class="border p-2 rounded-lg text-xs bg-white">
-                    <option value="">جميع الحالات</option>
-                    <option value="مفتوح">مفتوح</option>
-                    <option value="قيد التنفيذ">قيد التنفيذ</option>
-                    <option value="معلق">معلق</option>
-                    <option value="مغلق">مغلق (مكتمل)</option>
-                </select>
-
-                <select id="filter-priority" onchange="render()" class="border p-2 rounded-lg text-xs bg-white">
-                    <option value="">جميع الأولويات</option>
-                    <option value="عالية">عالية (طارئ)</option>
-                    <option value="متوسطة">متوسطة</option>
-                    <option value="عادية">عادية</option>
-                </select>
+                <div>
+                    <label for="search-input" class="sr-only">بحث في الأوامر</label>
+                    <input type="text" id="search-input" oninput="render()" placeholder="بحث بالوصف، المرجع، المقاول..." class="w-full border border-slate-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-950">
+                </div>
+                <div>
+                    <label for="filter-wilayat" class="sr-only">تصفية حسب الولاية</label>
+                    <select id="filter-wilayat" onchange="render()" class="w-full border border-slate-300 p-2.5 rounded-lg text-xs bg-white">
+                        <option value="">جميع الولايات</option>
+                        <option value="البريمي">البريمي</option>
+                        <option value="محضة">محضة</option>
+                        <option value="السنينة">السنينة</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-status" class="sr-only">تصفية حسب الحالة</label>
+                    <select id="filter-status" onchange="render()" class="w-full border border-slate-300 p-2.5 rounded-lg text-xs bg-white">
+                        <option value="">جميع الحالات</option>
+                        <option value="مفتوح">مفتوح</option>
+                        <option value="قيد التنفيذ">قيد التنفيذ</option>
+                        <option value="معلق">معلق</option>
+                        <option value="مغلق">مغلق (مكتمل)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-priority" class="sr-only">تصفية حسب الأولوية</label>
+                    <select id="filter-priority" onchange="render()" class="w-full border border-slate-300 p-2.5 rounded-lg text-xs bg-white">
+                        <option value="">جميع الأولويات</option>
+                        <option value="عالية">عالية (طارئ)</option>
+                        <option value="متوسطة">متوسطة</option>
+                        <option value="عادية">عادية</option>
+                    </select>
+                </div>
             </div>
-        </div>
+        </section>
 
         <!-- جدول أوامر العمل التفصيلي -->
-        <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-            <div class="p-4 border-b bg-slate-50 font-bold text-slate-700 flex justify-between items-center">
+        <section aria-label="جدول أسباب وأوامر العمل" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b bg-slate-50 font-bold text-slate-800 flex justify-between items-center">
                 <span>سجل وقائمة أوامر العمل الرسمية</span>
-                <span id="orders-count" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">جاري التحميل...</span>
+                <span id="orders-count" class="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-bold">جاري التحميل...</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-right text-xs md:text-sm">
-                    <thead class="bg-slate-100 text-slate-600 border-b">
+                    <thead class="bg-slate-100 text-slate-700 border-b">
                         <tr>
-                            <th class="p-3">رقم الأمر</th>
-                            <th class="p-3">وصف العمل / الخلل</th>
-                            <th class="p-3">الولاية والمنطقة</th>
-                            <th class="p-3">نوع الصيانة</th>
-                            <th class="p-3">المقاول المنفذ</th>
-                            <th class="p-3">التكلفة</th>
-                            <th class="p-3">الأولوية</th>
-                            <th class="p-3">الحالة</th>
-                            <th class="p-3 text-center no-print">الإجراءات</th>
+                            <th scope="col" class="p-3">رقم الأمر</th>
+                            <th scope="col" class="p-3">وصف العمل / الخلل</th>
+                            <th scope="col" class="p-3">الولاية والمنطقة</th>
+                            <th scope="col" class="p-3">نوع الصيانة</th>
+                            <th scope="col" class="p-3">المقاول المنفذ</th>
+                            <th scope="col" class="p-3">التكلفة</th>
+                            <th scope="col" class="p-3">الأولوية</th>
+                            <th scope="col" class="p-3">الحالة</th>
+                            <th scope="col" class="p-3 text-center no-print">الإجراءات</th>
                         </tr>
                     </thead>
-                    <tbody id="orders-table" class="divide-y">
+                    <tbody id="orders-table" class="divide-y divide-slate-200">
                         <!-- تعبئة تلقائية -->
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
 
     </main>
 
     <!-- Modal: نافذة إنشاء وتعديل أمر العمل -->
-    <div id="modal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
-        <div class="bg-white rounded-xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 id="modal-title" class="text-base font-bold text-blue-950">إنشاء أمر عمل جديد</h3>
-                <button onclick="toggleModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button type="button" onclick="toggleModal()" aria-label="إغلاق النافذة" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
+                </button>
             </div>
-            <form id="order-form" onsubmit="handleFormSubmit(event)" class="space-y-3">
+            <form id="order-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="edit-id">
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs font-bold block mb-1">رقم أمر العمل المرجعي</label>
-                        <input type="text" id="code" readonly class="w-full border p-2 rounded-lg text-sm bg-slate-100 font-bold text-blue-950">
+                        <label for="code" class="text-xs font-bold text-slate-700 block mb-1">رقم أمر العمل المرجعي</label>
+                        <input type="text" id="code" readonly class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-slate-100 font-bold text-blue-950 cursor-not-allowed">
                     </div>
                     <div>
-                        <label class="text-xs font-bold block mb-1">نوع الصيانة</label>
-                        <select id="type" class="w-full border p-2 rounded-lg text-sm bg-white">
+                        <label for="type" class="text-xs font-bold text-slate-700 block mb-1">نوع الصيانة</label>
+                        <select id="type" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white">
                             <option>صيانة اسفلتية وحفر</option>
                             <option>تصريف مياه وأودية</option>
                             <option>إنارة وأعمدة الكهرباء</option>
@@ -185,48 +206,48 @@
                 </div>
 
                 <div>
-                    <label class="text-xs font-bold block mb-1">وصف العمل أو المشكلة</label>
-                    <input type="text" id="title" required class="w-full border p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-950 outline-none" placeholder="مثال: إصلاح هبوط اسفلتي شديد وتأهيل الطبقة">
+                    <label for="title" class="text-xs font-bold text-slate-700 block mb-1">وصف العمل أو المشكلة <span class="text-red-600">*</span></label>
+                    <input type="text" id="title" required class="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-950 outline-none" placeholder="مثال: إصلاح هبوط اسفلتي شديد وتأهيل الطبقة">
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs font-bold block mb-1">الولاية</label>
-                        <select id="wilayat" class="w-full border p-2 rounded-lg text-sm bg-white">
+                        <label for="wilayat" class="text-xs font-bold text-slate-700 block mb-1">الولاية</label>
+                        <select id="wilayat" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white">
                             <option>البريمي</option>
                             <option>محضة</option>
                             <option>السنينة</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-xs font-bold block mb-1">المنطقة / الشارع</label>
-                        <input type="text" id="region" required class="w-full border p-2 rounded-lg text-sm" placeholder="مثال: الخضراء / شارع الشريعة">
+                        <label for="region" class="text-xs font-bold text-slate-700 block mb-1">المنطقة / الشارع <span class="text-red-600">*</span></label>
+                        <input type="text" id="region" required class="w-full border border-slate-300 p-2.5 rounded-lg text-sm" placeholder="مثال: الخضراء / شارع الشريعة">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs font-bold block mb-1">المقاول المنفذ</label>
-                        <input type="text" id="contractor" class="w-full border p-2 rounded-lg text-sm" placeholder="شركة البريمي للمقاولات">
+                        <label for="contractor" class="text-xs font-bold text-slate-700 block mb-1">المقاول المنفذ</label>
+                        <input type="text" id="contractor" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm" placeholder="شركة البريمي للمقاولات">
                     </div>
                     <div>
-                        <label class="text-xs font-bold block mb-1">التكلفة التقديرية (ر.ع)</label>
-                        <input type="number" id="cost" class="w-full border p-2 rounded-lg text-sm" placeholder="250">
+                        <label for="cost" class="text-xs font-bold text-slate-700 block mb-1">التكلفة التقديرية (ر.ع)</label>
+                        <input type="number" id="cost" min="0" step="any" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm" placeholder="250">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs font-bold block mb-1">درجة الأولوية</label>
-                        <select id="priority" class="w-full border p-2 rounded-lg text-sm bg-white">
+                        <label for="priority" class="text-xs font-bold text-slate-700 block mb-1">درجة الأولوية</label>
+                        <select id="priority" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white">
                             <option>عادية</option>
                             <option>متوسطة</option>
                             <option value="عالية (طارئ)" class="text-red-600 font-bold">عالية (طارئ)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-xs font-bold block mb-1">حالة أمر العمل</label>
-                        <select id="status" class="w-full border p-2 rounded-lg text-sm bg-white font-bold">
+                        <label for="status" class="text-xs font-bold text-slate-700 block mb-1">حالة أمر العمل</label>
+                        <select id="status" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white font-bold">
                             <option value="مفتوح">مفتوح</option>
                             <option value="قيد التنفيذ">قيد التنفيذ</option>
                             <option value="معلق">معلق</option>
@@ -235,29 +256,30 @@
                     </div>
                 </div>
 
-                <!-- قسم الإحداثيات القابل للتعديل -->
-                <div class="bg-slate-50 p-3 rounded-lg border space-y-2">
-                    <div class="flex justify-between items-center">
-                        <label class="text-xs font-bold text-slate-700 flex items-center gap-1">
-                            <i class="fa-solid fa-location-crosshairs text-amber-500"></i> إحداثيات الموقع الجغرافي
-                        </label>
-                        <span class="text-[10px] text-slate-500 font-normal">يمكنك الضغط على الخريطة لتحديدها أو تعديلها يدويًا</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
+                <!-- قسم الإحداثيات القابل للتعديل بتصميم وأكسسة محسنة -->
+                <fieldset class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                    <legend class="text-xs font-bold text-slate-800 flex items-center gap-1.5 px-1">
+                        <i class="fa-solid fa-location-crosshairs text-amber-500" aria-hidden="true"></i> إحداثيات الموقع الجغرافي
+                    </legend>
+                    <p class="text-[11px] text-slate-600">يمكنك النقر على الخريطة لتحديد الإحداثيات تلقائياً أو كتابتها يدويًا هنا.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                         <div>
-                            <label class="text-[11px] font-bold text-slate-600 block mb-0.5">خط العرض (Latitude)</label>
-                            <input type="number" step="any" id="lat" required class="w-full border p-2 rounded-lg text-xs bg-white font-mono focus:ring-1 focus:ring-blue-950" placeholder="24.25000">
+                            <label for="lat" class="text-[11px] font-bold text-slate-700 block mb-1">خط العرض (Latitude)</label>
+                            <input type="number" step="any" id="lat" required class="w-full border border-slate-300 p-2 rounded-lg text-xs bg-white font-mono focus:ring-2 focus:ring-blue-950" placeholder="24.25000">
                         </div>
                         <div>
-                            <label class="text-[11px] font-bold text-slate-600 block mb-0.5">خط الطول (Longitude)</label>
-                            <input type="number" step="any" id="lng" required class="w-full border p-2 rounded-lg text-xs bg-white font-mono focus:ring-1 focus:ring-blue-950" placeholder="55.78000">
+                            <label for="lng" class="text-[11px] font-bold text-slate-700 block mb-1">خط الطول (Longitude)</label>
+                            <input type="number" step="any" id="lng" required class="w-full border border-slate-300 p-2 rounded-lg text-xs bg-white font-mono focus:ring-2 focus:ring-blue-950" placeholder="55.78000">
                         </div>
                     </div>
-                </div>
+                    <button type="button" onclick="getCurrentLocationForModal()" class="mt-2 text-xs text-blue-950 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-md font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-location-arrow" aria-hidden="true"></i> تعيين موقعي الحالي كإحداثيات
+                    </button>
+                </fieldset>
 
-                <div class="flex justify-end gap-2 pt-3 border-t">
-                    <button type="button" onclick="toggleModal()" class="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50">إلغاء</button>
-                    <button type="submit" class="px-5 py-2 bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-lg text-sm shadow">حفظ البيانات</button>
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                    <button type="button" onclick="toggleModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-lg text-sm shadow transition">حفظ البيانات</button>
                 </div>
             </form>
         </div>
@@ -280,12 +302,12 @@
             const iconEl = document.getElementById('toast-icon');
 
             msgEl.innerText = message;
-            iconEl.className = isError ? "fa-solid fa-circle-xmark text-red-400" : "fa-solid fa-circle-check text-emerald-400";
+            iconEl.className = isError ? "fa-solid fa-circle-xmark text-red-400 text-lg" : "fa-solid fa-circle-check text-emerald-400 text-lg";
             
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
+            }, 3500);
         }
 
         function initMap() {
@@ -325,6 +347,18 @@
                     L.marker([lat, lng]).addTo(map).bindPopup('<b>موقعك الحالي</b>').openPopup();
                     showToast('تم تحديد موقعك بنجاح');
                 }, () => showToast('تعذر الوصول إلى الموقع الجغرافي', true));
+            } else {
+                showToast('خاصية تحديد الموقع غير مدعومة في متصفحك', true);
+            }
+        }
+
+        function getCurrentLocationForModal() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    document.getElementById('lat').value = position.coords.latitude.toFixed(5);
+                    document.getElementById('lng').value = position.coords.longitude.toFixed(5);
+                    showToast('تم تعيين الإحداثيات الحالية بنجاح');
+                }, () => showToast('تعذر جلب الموقع الحالي', true));
             }
         }
 
@@ -354,8 +388,22 @@
         }
 
         function toggleModal() {
-            document.getElementById('modal').classList.toggle('hidden');
+            const modal = document.getElementById('modal');
+            const isHidden = modal.classList.toggle('hidden');
+            if (!isHidden) {
+                document.getElementById('title').focus();
+            }
         }
+
+        // إغلاق Modal بالضغط على Escape Keyboard Key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modal');
+                if (!modal.classList.contains('hidden')) {
+                    toggleModal();
+                }
+            }
+        });
 
         function openModalForCreate(lat = 24.25, lng = 55.78) {
             document.getElementById('edit-id').value = '';
@@ -436,7 +484,7 @@
                 .update({ status: newStatus })
                 .eq('id', id);
 
-            if (!error) showToast('تم تحديث حالة العمل');
+            if (!error) showToast('تم تحديث حالة العمل بنجاح');
         }
 
         async function deleteOrder(id) {
@@ -523,11 +571,11 @@
                         }).addTo(markersGroup);
 
                         marker.bindPopup(`
-                            <div style="direction: rtl; font-family: 'Tajawal', sans-serif;">
-                                <span style="font-size: 11px; background: #eee; padding: 2px 5px; border-radius: 3px;"><b>${o.code}</b></span><br>
-                                <b>${o.title}</b><br>
+                            <div style="direction: rtl; font-family: 'Tajawal', sans-serif; text-align: right;">
+                                <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 4px;"><b>${o.code}</b></span><br>
+                                <b style="font-size: 13px;">${o.title}</b><br>
                                 <span style="font-size: 12px; color: #555;">الولاية: ${o.wilayat} (${o.region || ''})</span><br>
-                                الإحداثيات: <code style="font-size:10px">${o.lat}, ${o.lng}</code><br>
+                                الإحداثيات: <code style="font-size:11px; font-family: monospace;">${o.lat}, ${o.lng}</code><br>
                                 حالة العمل: <b>${o.status}</b> | التكلفة: <b>${o.cost} ر.ع</b>
                             </div>
                         `);
@@ -537,25 +585,26 @@
 
             const tbody = document.getElementById('orders-table');
             if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">لا توجد نتائج مطابقة لخيارات البحث أو الفلترة.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500 font-bold">لا توجد نتائج مطابقة لخيارات البحث أو الفلترة.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = orders.map(o => `
-                <tr class="hover:bg-slate-50 transition">
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                     <td class="p-3 font-bold text-blue-950">${o.code}</td>
-                    <td class="p-3 font-semibold text-slate-800">${o.title}</td>
-                    <td class="p-3">${o.wilayat} <span class="text-xs text-slate-400 block">${o.region || ''}</span></td>
+                    <td class="p-3 font-semibold text-slate-900">${o.title}</td>
+                    <td class="p-3">${o.wilayat} <span class="text-xs text-slate-500 block font-normal">${o.region || ''}</span></td>
                     <td class="p-3 text-xs">${o.type}</td>
-                    <td class="p-3 text-xs text-slate-600">${o.contractor || 'غير محدد'}</td>
-                    <td class="p-3 font-bold text-slate-700">${o.cost} ر.ع</td>
+                    <td class="p-3 text-xs text-slate-700">${o.contractor || 'غير محدد'}</td>
+                    <td class="p-3 font-bold text-slate-800">${o.cost} ر.ع</td>
                     <td class="p-3">
-                        <span class="px-2 py-0.5 rounded text-xs font-bold ${o.priority.includes('عالية') ? 'bg-red-100 text-red-700' : (o.priority === 'متوسطة' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700')}">
+                        <span class="px-2.5 py-1 rounded-md text-xs font-bold ${o.priority.includes('عالية') ? 'bg-red-100 text-red-800' : (o.priority === 'متوسطة' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')}">
                             ${o.priority}
                         </span>
                     </td>
                     <td class="p-3">
-                        <select onchange="quickChangeStatus(${o.id}, this.value)" class="text-xs p-1 rounded font-bold border ${o.status === 'مغلق' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (o.status === 'قيد التنفيذ' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200')}">
+                        <label for="status-select-${o.id}" class="sr-only">تغيير حالة أمر العمل ${o.code}</label>
+                        <select id="status-select-${o.id}" onchange="quickChangeStatus(${o.id}, this.value)" class="text-xs p-1.5 rounded-lg font-bold border ${o.status === 'مغلق' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (o.status === 'قيد التنفيذ' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-800 border-blue-300')}">
                             <option value="مفتوح" ${o.status === 'مفتوح' ? 'selected' : ''}>مفتوح</option>
                             <option value="قيد التنفيذ" ${o.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option>
                             <option value="معلق" ${o.status === 'معلق' ? 'selected' : ''}>معلق</option>
@@ -563,9 +612,9 @@
                         </select>
                     </td>
                     <td class="p-3 text-center space-x-1 space-x-reverse no-print">
-                        <button onclick="window.print()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1.5 rounded transition" title="طباعة"><i class="fa-solid fa-print"></i></button>
-                        <button onclick="openModalForEdit(${o.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1.5 rounded transition" title="تعديل"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button onclick="deleteOrder(${o.id})" class="text-xs bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 px-2 py-1.5 rounded transition" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="window.print()" aria-label="طباعة ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="طباعة"><i class="fa-solid fa-print" aria-hidden="true"></i></button>
+                        <button onclick="openModalForEdit(${o.id})" aria-label="تعديل ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="تعديل"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
+                        <button onclick="deleteOrder(${o.id})" aria-label="حذف ${o.code}" class="text-xs bg-slate-100 hover:bg-red-100 hover:text-red-700 text-slate-700 p-2 rounded-lg transition" title="حذف"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
                     </td>
                 </tr>
             `).join('');
