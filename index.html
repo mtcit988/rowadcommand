@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام رُواد (ROWADS) - المنظومة السحابية لإدارة الطرق</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style> 
+        body { font-family: 'Tajawal', sans-serif; }
+        #map { height: 380px; width: 100%; z-index: 1; }
+        @media print {
+            header, .no-print, #map, .stats-container { display: none !important; }
+            body { background: #fff; padding: 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 pb-12">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 left-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg" class="text-xs font-bold">تم تنفيذ العملية بنجاح</span>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
+            <div>
+                <h1 class="text-base md:text-lg font-bold">منظومة رُواد الشاملة لإدارة وصيانة الطرق</h1>
+                <p class="text-xs text-slate-300">دائرة الطرق - محافظة البريمي <span class="bg-emerald-500 text-white px-2 py-0.5 rounded text-[10px] mr-2 font-bold">متصل سحابياً</span></p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 no-print">
+            <button onclick="openModalForCreate()" class="bg-amber-500 hover:bg-amber-400 text-blue-950 font-bold px-4 py-2 rounded-lg text-xs md:text-sm shadow transition">
+                <i class="fa-solid fa-plus"></i> إنشاء أمر عمل جديد
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto mt-6 px-4 space-y-6">
+
+        <!-- الإحصائيات الشاملة -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 stats-container">
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-500 font-bold">إجمالي الأوامر المسجلة</p>
+                <h3 id="stat-total" class="text-2xl md:text-3xl font-black text-blue-950 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-500 font-bold">أوامر قيد التنفيذ / مفتوحة</p>
+                <h3 id="stat-open" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-500 font-bold">الأوامر المكتملة والمغلقة</p>
+                <h3 id="stat-closed" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-500 font-bold">إجمالي الميزانية التقديرية</p>
+                <h3 id="stat-cost" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">0 ر.ع</h3>
+            </div>
+        </div>
+
+        <!-- الخريطة التفاعلية -->
+        <div class="bg-white rounded-xl border shadow-sm overflow-hidden p-4 no-print">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2">
+                    <i class="fa-solid fa-map-location-dot text-amber-500"></i> الخريطة التفاعلية لأوامر العمل ومواقع الصيانة
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="locateUser()" class="bg-blue-100 hover:bg-blue-200 text-blue-900 px-3 py-1 rounded-lg text-xs font-bold transition">
+                        <i class="fa-solid fa-crosshairs"></i> موقعي الحالي
+                    </button>
+                </div>
+            </div>
+            <div id="map" class="rounded-lg border"></div>
+        </div>
+
+        <!-- شريط البحث والتصفية -->
+        <div class="bg-white p-4 rounded-xl border shadow-sm space-y-3 no-print">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input type="text" id="search-input" oninput="render()" placeholder="بحث بالوصف، المرجع، المقاول..." class="border p-2 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-950">
+                
+                <select id="filter-wilayat" onchange="render()" class="border p-2 rounded-lg text-xs bg-white">
+                    <option value="">جميع الولايات</option>
+                    <option value="البريمي">البريمي</option>
+                    <option value="محضة">محضة</option>
+                    <option value="السنينة">السنينة</option>
+                </select>
+
+                <select id="filter-status" onchange="render()" class="border p-2 rounded-lg text-xs bg-white">
+                    <option value="">جميع الحالات</option>
+                    <option value="مفتوح">مفتوح</option>
+                    <option value="قيد التنفيذ">قيد التنفيذ</option>
+                    <option value="معلق">معلق</option>
+                    <option value="مغلق">مغلق (مكتمل)</option>
+                </select>
+
+                <select id="filter-priority" onchange="render()" class="border p-2 rounded-lg text-xs bg-white">
+                    <option value="">جميع الأولويات</option>
+                    <option value="عالية (طارئ)">عالية (طارئ)</option>
+                    <option value="متوسطة">متوسطة</option>
+                    <option value="عادية">عادية</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- جدول أوامر العمل التفصيلي -->
+        <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div class="p-4 border-b bg-slate-50 font-bold text-slate-700 flex justify-between items-center">
+                <span>سجل وقائمة أوامر العمل الرسمية المباشرة</span>
+                <span id="orders-count" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full">جاري التحميل...</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs md:text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3">رقم الأمر</th>
+                            <th class="p-3">وصف العمل / الخلل</th>
+                            <th class="p-3">الولاية والمنطقة</th>
+                            <th class="p-3">نوع الصيانة</th>
+                            <th class="p-3">المقاول المنفذ</th>
+                            <th class="p-3">التكلفة</th>
+                            <th class="p-3">الأولوية</th>
+                            <th class="p-3">الحالة</th>
+                            <th class="p-3 text-center no-print">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table" class="divide-y">
+                        <!-- تعبئة تلقائية -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: نافذة إنشاء وتعديل أمر العمل -->
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
+        <div class="bg-white rounded-xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modal-title" class="text-base font-bold text-blue-950">إنشاء أمر عمل جديد</h3>
+                <button onclick="toggleModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="order-form" onsubmit="handleFormSubmit(event)" class="space-y-3">
+                <input type="hidden" id="edit-id">
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold block mb-1">رقم أمر العمل المرجعي</label>
+                        <input type="text" id="code" readonly class="w-full border p-2 rounded-lg text-sm bg-slate-100 font-bold text-blue-950">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold block mb-1">نوع الصيانة</label>
+                        <select id="type" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option>صيانة اسفلتية وحفر</option>
+                            <option>تصريف مياه وأودية</option>
+                            <option>إنارة وأعمدة الكهرباء</option>
+                            <option>إشارات ولوحات مرورية</option>
+                            <option>أكتاف وحواجز الطرق</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold block mb-1">وصف العمل أو المشكلة</label>
+                    <input type="text" id="title" required class="w-full border p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-950 outline-none" placeholder="مثال: إصلاح هبوط اسفلتي شديد وتأهيل الطبقة">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold block mb-1">الولاية</label>
+                        <select id="wilayat" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option>البريمي</option>
+                            <option>محضة</option>
+                            <option>السنينة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold block mb-1">المنطقة / الشارع</label>
+                        <input type="text" id="region" required class="w-full border p-2 rounded-lg text-sm" placeholder="مثال: الخضراء / شارع الشريعة">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold block mb-1">المقاول المنفذ</label>
+                        <input type="text" id="contractor" class="w-full border p-2 rounded-lg text-sm" placeholder="شركة البريمي للمقاولات">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold block mb-1">التكلفة التقديرية (ر.ع)</label>
+                        <input type="number" id="cost" class="w-full border p-2 rounded-lg text-sm" placeholder="250">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold block mb-1">درجة الأولوية</label>
+                        <select id="priority" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option>عادية</option>
+                            <option>متوسطة</option>
+                            <option value="عالية (طارئ)" class="text-red-600 font-bold">عالية (طارئ)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold block mb-1">حالة أمر العمل</label>
+                        <select id="status" class="w-full border p-2 rounded-lg text-sm bg-white font-bold">
+                            <option value="مفتوح">مفتوح</option>
+                            <option value="قيد التنفيذ">قيد التنفيذ</option>
+                            <option value="معلق">معلق</option>
+                            <option value="مغلق">مغلق (مكتمل)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-lg border text-xs text-slate-600">
+                    <div>خط العرض (Lat): <span id="disp-lat" class="font-bold">24.25000</span></div>
+                    <div>خط الطول (Lng): <span id="disp-lng" class="font-bold">55.78000</span></div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t">
+                    <button type="button" onclick="toggleModal()" class="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50">إلغاء</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-lg text-sm shadow">حفظ في السحابة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- إعدادات الربط الآمنة بمشروعك في Supabase ---
+        const SUPABASE_URL = "https://boveqgmbndujoftazioe.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_TORXTscfItAZcYuVtwC5ZQ_HXujmA01";
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let map, markersGroup;
+        let selectedLat = 24.25, selectedLng = 55.78;
+        let globalOrders = [];
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            document.getElementById('toast-icon').className = isError ? "fa-solid fa-circle-xmark text-red-400" : "fa-solid fa-circle-check text-emerald-400";
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function initMap() {
+            map = L.map('map').setView([24.25, 55.78], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap | ROWADS Platform'
+            }).addTo(map);
+
+            markersGroup = L.layerGroup().addTo(map);
+
+            map.on('click', function(e) {
+                selectedLat = e.latlng.lat.toFixed(5);
+                selectedLng = e.latlng.lng.toFixed(5);
+                openModalForCreate(selectedLat, selectedLng);
+            });
+        }
+
+        async function fetchOrders() {
+            const { data, error } = await supabaseClient
+                .from('orders')
+                .select('*')
+                .order('id', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                showToast('حدث خطأ أثناء جلب البيانات من السحابة', true);
+                return;
+            }
+
+            globalOrders = data || [];
+            render();
+        }
+
+        function setupRealtime() {
+            supabaseClient
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+                    fetchOrders();
+                })
+                .subscribe();
+        }
+
+        function toggleModal() {
+            document.getElementById('modal').classList.toggle('hidden');
+        }
+
+        function openModalForCreate(lat = 24.25, lng = 55.78) {
+            document.getElementById('edit-id').value = '';
+            document.getElementById('modal-title').innerText = 'إنشاء أمر عمل جديد';
+            document.getElementById('order-form').reset();
+            
+            const nextNum = globalOrders.length > 0 ? Math.max(...globalOrders.map(o => o.id)) + 1 : 101;
+            document.getElementById('code').value = `WO-2026-${nextNum}`;
+            
+            selectedLat = lat;
+            selectedLng = lng;
+            document.getElementById('disp-lat').innerText = selectedLat;
+            document.getElementById('disp-lng').innerText = selectedLng;
+
+            toggleModal();
+        }
+
+        function openModalForEdit(id) {
+            const o = globalOrders.find(item => item.id === id);
+            if (!o) return;
+
+            document.getElementById('edit-id').value = o.id;
+            document.getElementById('modal-title').innerText = `تعديل أمر العمل (${o.code})`;
+            document.getElementById('code').value = o.code;
+            document.getElementById('title').value = o.title;
+            document.getElementById('type').value = o.type;
+            document.getElementById('wilayat').value = o.wilayat;
+            document.getElementById('region').value = o.region || '';
+            document.getElementById('contractor').value = o.contractor || '';
+            document.getElementById('cost').value = o.cost;
+            document.getElementById('priority').value = o.priority;
+            document.getElementById('status').value = o.status;
+
+            selectedLat = o.lat || 24.25;
+            selectedLng = o.lng || 55.78;
+            document.getElementById('disp-lat').innerText = selectedLat;
+            document.getElementById('disp-lng').innerText = selectedLng;
+
+            toggleModal();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-id').value;
+
+            const payload = {
+                title: document.getElementById('title').value,
+                type: document.getElementById('type').value,
+                wilayat: document.getElementById('wilayat').value,
+                region: document.getElementById('region').value,
+                contractor: document.getElementById('contractor').value,
+                cost: parseFloat(document.getElementById('cost').value || 0),
+                priority: document.getElementById('priority').value,
+                status: document.getElementById('status').value,
+                lat: parseFloat(selectedLat),
+                lng: parseFloat(selectedLng)
+            };
+
+            if (editId) {
+                const { error } = await supabaseClient
+                    .from('orders')
+                    .update(payload)
+                    .eq('id', editId);
+
+                if (!error) showToast('تم تعديل البيانات سحابياً بنجاح');
+            } else {
+                payload.code = document.getElementById('code').value;
+                const { error } = await supabaseClient
+                    .from('orders')
+                    .insert([payload]);
+
+                if (!error) showToast('تم حفظ أمر العمل الجديد في قاعدة البيانات');
+            }
+
+            toggleModal();
+            fetchOrders();
+        }
+
+        async function quickChangeStatus(id, newStatus) {
+            const { error } = await supabaseClient
+                .from('orders')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (!error) showToast('تم تحديث الحالة فوراً');
+        }
+
+        async function deleteOrder(id) {
+            if(confirm('هل أنت متأكد من حذف هذا الأمر من قاعدة البيانات؟')) {
+                const { error } = await supabaseClient
+                    .from('orders')
+                    .delete()
+                    .eq('id', id);
+
+                if (!error) showToast('تم حذف أمر العمل', true);
+                fetchOrders();
+            }
+        }
+
+        function locateUser() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], 14);
+                    L.marker([lat, lng]).addTo(map).bindPopup('<b>موقعك الحالي</b>').openPopup();
+                });
+            }
+        }
+
+        function render() {
+            const searchVal = document.getElementById('search-input')?.value.toLowerCase() || '';
+            const filterWilayat = document.getElementById('filter-wilayat')?.value || '';
+            const filterStatus = document.getElementById('filter-status')?.value || '';
+            const filterPriority = document.getElementById('filter-priority')?.value || '';
+
+            const orders = globalOrders.filter(o => {
+                const matchesSearch = o.title.toLowerCase().includes(searchVal) || 
+                                     o.code.toLowerCase().includes(searchVal) || 
+                                     (o.contractor && o.contractor.toLowerCase().includes(searchVal));
+                const matchesWilayat = !filterWilayat || o.wilayat === filterWilayat;
+                const matchesStatus = !filterStatus || o.status === filterStatus;
+                const matchesPriority = !filterPriority || o.priority.includes(filterPriority);
+
+                return matchesSearch && matchesWilayat && matchesStatus && matchesPriority;
+            });
+
+            document.getElementById('stat-total').innerText = globalOrders.length;
+            document.getElementById('stat-open').innerText = globalOrders.filter(o => o.status !== 'مغلق').length;
+            document.getElementById('stat-closed').innerText = globalOrders.filter(o => o.status === 'مغلق').length;
+            document.getElementById('stat-cost').innerText = globalOrders.reduce((acc, r) => acc + Number(r.cost || 0), 0).toLocaleString() + ' ر.ع';
+            document.getElementById('orders-count').innerText = orders.length + ' عناصر معروضة';
+
+            if (markersGroup) {
+                markersGroup.clearLayers();
+                orders.forEach(o => {
+                    if (o.lat && o.lng) {
+                        const color = o.status === 'مغلق' ? '#10b981' : (o.status === 'قيد التنفيذ' ? '#f59e0b' : '#ef4444');
+                        const marker = L.circleMarker([o.lat, o.lng], {
+                            radius: 8,
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 2,
+                            fillOpacity: 0.9
+                        }).addTo(markersGroup);
+
+                        marker.bindPopup(`
+                            <div style="direction: rtl; font-family: 'Tajawal', sans-serif;">
+                                <span style="font-size: 11px; background: #eee; padding: 2px 5px; border-radius: 3px;"><b>${o.code}</b></span><br>
+                                <b>${o.title}</b><br>
+                                <span style="font-size: 12px; color: #555;">الولاية: ${o.wilayat} (${o.region || ''})</span><br>
+                                حالة العمل: <b>${o.status}</b> | التكلفة: <b>${o.cost} ر.ع</b>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            const tbody = document.getElementById('orders-table');
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">لا توجد بيانات مطابقة حالياً.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(o => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-bold text-blue-950">${o.code}</td>
+                    <td class="p-3 font-semibold text-slate-800">${o.title}</td>
+                    <td class="p-3">${o.wilayat} <span class="text-xs text-slate-400 block">${o.region || ''}</span></td>
+                    <td class="p-3 text-xs">${o.type}</td>
+                    <td class="p-3 text-xs text-slate-600">${o.contractor || 'غير محدد'}</td>
+                    <td class="p-3 font-bold text-slate-700">${o.cost} ر.ع</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold ${o.priority.includes('عالية') ? 'bg-red-100 text-red-700' : (o.priority === 'متوسطة' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700')}">
+                            ${o.priority}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <select onchange="quickChangeStatus(${o.id}, this.value)" class="text-xs p-1 rounded font-bold border ${o.status === 'مغلق' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (o.status === 'قيد التنفيذ' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200')}">
+                            <option value="مفتوح" ${o.status === 'مفتوح' ? 'selected' : ''}>مفتوح</option>
+                            <option value="قيد التنفيذ" ${o.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option>
+                            <option value="معلق" ${o.status === 'معلق' ? 'selected' : ''}>معلق</option>
+                            <option value="مغلق" ${o.status === 'مغلق' ? 'selected' : ''}>مغلق (مكتمل)</option>
+                        </select>
+                    </td>
+                    <td class="p-3 text-center space-x-1 space-x-reverse no-print">
+                        <button onclick="openModalForEdit(${o.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1.5 rounded transition" title="تعديل"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteOrder(${o.id})" class="text-xs bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 px-2 py-1.5 rounded transition" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.onload = function() {
+            initMap();
+            fetchOrders();
+            setupRealtime();
+        };
+    </script>
+</body>
+</html>
