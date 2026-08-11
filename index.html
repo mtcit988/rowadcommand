@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام رُواد (ROWADS) - المنظومة الشاملة لإدارة الطرق</title>
+    <title>نظام رُواد (ROWADS) - المنظومة السحابية لإدارة الطرق</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
@@ -12,13 +12,34 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Firebase SDK (Modular Version 10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { 
+            getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // كائن الإعدادات الخاص بمشروعك في Firebase (rowads-48a34)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmaKM1rqHoA3EDSBs0YncKXpRmzGri1SQ",
+            authDomain: "rowads-48a34.firebaseapp.com",
+            projectId: "rowads-48a34",
+            storageBucket: "rowads-48a34.firebasestorage.app",
+            messagingSenderId: "1078921480693",
+            appId: "1:1078921480693:web:33026781b07437992ef8bc",
+            measurementId: "G-0YFRB68F19"
+        };
+
+        // تهيئة تطبيق Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query };
+    </script>
 
     <style> 
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 380px; width: 100%; z-index: 1; }
-        /* Focus styles for Keyboard Accessibility */
         *:focus-visible {
             outline: 3px solid #f59e0b !important;
             outline-offset: 2px;
@@ -31,7 +52,7 @@
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
-    <!-- Toast Notification / Live Region for Screen Readers -->
+    <!-- Toast Notification -->
     <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 left-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
         <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg" aria-hidden="true"></i>
         <span id="toast-msg" class="text-xs md:text-sm font-bold">تم تنفيذ العملية بنجاح</span>
@@ -44,8 +65,8 @@
             <div>
                 <h1 class="text-base md:text-lg font-bold">منظومة رُواد الشاملة لإدارة وصيانة الطرق</h1>
                 <p class="text-xs text-slate-300">دائرة الطرق - محافظة البريمي 
-                    <span class="inline-flex items-center gap-1 bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px] mr-2 font-bold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> متصل سحابياً
+                    <span class="inline-flex items-center gap-1 bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] mr-2 font-bold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Firebase متصل
                     </span>
                 </p>
             </div>
@@ -256,7 +277,6 @@
                     </div>
                 </div>
 
-                <!-- قسم الإحداثيات القابل للتعديل بتصميم وأكسسة محسنة -->
                 <fieldset class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
                     <legend class="text-xs font-bold text-slate-800 flex items-center gap-1.5 px-1">
                         <i class="fa-solid fa-location-crosshairs text-amber-500" aria-hidden="true"></i> إحداثيات الموقع الجغرافي
@@ -286,23 +306,14 @@
     </div>
 
     <script>
-        // --- إعدادات الربط الآمنة بمشروعك في Supabase ---
-        const SUPABASE_URL = "https://boveqgmbndujoftazioe.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_TORXTscfItAZcYuVtwC5ZQ_HXujmA01";
-
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         let map, markersGroup, currentTileLayer;
         let isSatellite = false;
         let globalOrders = [];
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toast-msg');
-            const iconEl = document.getElementById('toast-icon');
-
-            msgEl.innerText = message;
-            iconEl.className = isError ? "fa-solid fa-circle-xmark text-red-400 text-lg" : "fa-solid fa-circle-check text-emerald-400 text-lg";
+            document.getElementById('toast-msg').innerText = message;
+            document.getElementById('toast-icon').className = isError ? "fa-solid fa-circle-xmark text-red-400 text-lg" : "fa-solid fa-circle-check text-emerald-400 text-lg";
             
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => {
@@ -362,29 +373,27 @@
             }
         }
 
-        async function fetchOrders() {
-            const { data, error } = await supabaseClient
-                .from('orders')
-                .select('*')
-                .order('id', { ascending: false });
-
-            if (error) {
-                console.error(error);
-                showToast('حدث خطأ أثناء جلب البيانات من السحابة', true);
+        // --- المزامنة اللحظية مع Firebase Firestore ---
+        function setupFirebaseRealtime() {
+            if (!window.firestoreTools) {
+                setTimeout(setupFirebaseRealtime, 200);
                 return;
             }
 
-            globalOrders = data || [];
-            render();
-        }
+            const { collection, onSnapshot, query } = window.firestoreTools;
+            const ordersRef = collection(window.db, "orders");
+            const q = query(ordersRef);
 
-        function setupRealtime() {
-            supabaseClient
-                .channel('schema-db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-                    fetchOrders();
-                })
-                .subscribe();
+            onSnapshot(q, (snapshot) => {
+                globalOrders = [];
+                snapshot.forEach((docSnap) => {
+                    globalOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                });
+                render();
+            }, (error) => {
+                console.error("Firebase Error: ", error);
+                showToast("حدث خطأ في الاتصال بـ Firebase", true);
+            });
         }
 
         function toggleModal() {
@@ -395,7 +404,6 @@
             }
         }
 
-        // إغلاق Modal بالضغط على Escape Keyboard Key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('modal');
@@ -410,7 +418,7 @@
             document.getElementById('modal-title').innerText = 'إنشاء أمر عمل جديد';
             document.getElementById('order-form').reset();
             
-            const nextNum = globalOrders.length > 0 ? Math.max(...globalOrders.map(o => o.id)) + 1 : 101;
+            const nextNum = globalOrders.length > 0 ? Math.max(...globalOrders.map(o => o.numId || 100)) + 1 : 101;
             document.getElementById('code').value = `WO-2026-${nextNum}`;
             
             document.getElementById('lat').value = lat;
@@ -419,11 +427,11 @@
             toggleModal();
         }
 
-        function openModalForEdit(id) {
-            const o = globalOrders.find(item => item.id === id);
+        function openModalForEdit(firestoreId) {
+            const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
-            document.getElementById('edit-id').value = o.id;
+            document.getElementById('edit-id').value = o.firestoreId;
             document.getElementById('modal-title').innerText = `تعديل أمر العمل (${o.code})`;
             document.getElementById('code').value = o.code;
             document.getElementById('title').value = o.title;
@@ -444,8 +452,14 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
             const editId = document.getElementById('edit-id').value;
+            const { collection, addDoc, updateDoc, doc } = window.firestoreTools;
+
+            const codeStr = document.getElementById('code').value;
+            const numId = parseInt(codeStr.replace(/\D/g, '')) || Date.now();
 
             const payload = {
+                code: codeStr,
+                numId: numId,
                 title: document.getElementById('title').value,
                 type: document.getElementById('type').value,
                 wilayat: document.getElementById('wilayat').value,
@@ -455,55 +469,56 @@
                 priority: document.getElementById('priority').value,
                 status: document.getElementById('status').value,
                 lat: parseFloat(document.getElementById('lat').value),
-                lng: parseFloat(document.getElementById('lng').value)
+                lng: parseFloat(document.getElementById('lng').value),
+                updatedAt: new Date().toISOString()
             };
 
-            if (editId) {
-                const { error } = await supabaseClient
-                    .from('orders')
-                    .update(payload)
-                    .eq('id', editId);
-
-                if (!error) showToast('تم تعديل أمر العمل والإحداثيات بنجاح');
-            } else {
-                payload.code = document.getElementById('code').value;
-                const { error } = await supabaseClient
-                    .from('orders')
-                    .insert([payload]);
-
-                if (!error) showToast('تم إنشاء أمر العمل الجديد بنجاح');
+            try {
+                if (editId) {
+                    const docRef = doc(window.db, "orders", editId);
+                    await updateDoc(docRef, payload);
+                    showToast('تم تعديل البيانات في Firebase بنجاح');
+                } else {
+                    payload.createdAt = new Date().toISOString();
+                    await addDoc(collection(window.db, "orders"), payload);
+                    showToast('تم إضافة أمر العمل إلى Firebase بنجاح');
+                }
+                toggleModal();
+            } catch (err) {
+                console.error(err);
+                showToast('فشل حفظ البيانات في Firebase', true);
             }
-
-            toggleModal();
-            fetchOrders();
         }
 
-        async function quickChangeStatus(id, newStatus) {
-            const { error } = await supabaseClient
-                .from('orders')
-                .update({ status: newStatus })
-                .eq('id', id);
-
-            if (!error) showToast('تم تحديث حالة العمل بنجاح');
+        async function quickChangeStatus(firestoreId, newStatus) {
+            const { doc, updateDoc } = window.firestoreTools;
+            try {
+                const docRef = doc(window.db, "orders", firestoreId);
+                await updateDoc(docRef, { status: newStatus });
+                showToast('تم تحديث حالة العمل بنجاح');
+            } catch (err) {
+                showToast('فشل تحديث الحالة', true);
+            }
         }
 
-        async function deleteOrder(id) {
-            if(confirm('هل أنت متأكد من حذف أمر العمل هذا نهائياً من قاعدة البيانات؟')) {
-                const { error } = await supabaseClient
-                    .from('orders')
-                    .delete()
-                    .eq('id', id);
-
-                if (!error) showToast('تم حذف أمر العمل', true);
-                fetchOrders();
+        async function deleteOrder(firestoreId) {
+            if(confirm('هل أنت متأكد من حذف أمر العمل هذا نهائياً من قاعدة بيانات Firebase؟')) {
+                const { doc, deleteDoc } = window.firestoreTools;
+                try {
+                    await deleteDoc(doc(window.db, "orders", firestoreId));
+                    showToast('تم حذف أمر العمل بنجاح', true);
+                } catch (err) {
+                    showToast('فشل حذف أمر العمل', true);
+                }
             }
         }
 
         function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalOrders, null, 2));
+            const cleanOrders = globalOrders.map(({ firestoreId, ...rest }) => rest);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanOrders, null, 2));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `ROWADS_Data_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchor.setAttribute("download", `ROWADS_Firebase_Data_${new Date().toISOString().slice(0,10)}.json`);
             document.body.appendChild(dlAnchor);
             dlAnchor.click();
             dlAnchor.remove();
@@ -519,13 +534,11 @@
                 try {
                     const imported = JSON.parse(evt.target.result);
                     if (Array.isArray(imported)) {
-                        const { error } = await supabaseClient.from('orders').upsert(imported);
-                        if (!error) {
-                            showToast('تم استيراد البيانات ورفعها للسحابة بنجاح');
-                            fetchOrders();
-                        } else {
-                            showToast('حدث خطأ أثناء رفع البيانات المستوردة', true);
+                        const { collection, addDoc } = window.firestoreTools;
+                        for (const item of imported) {
+                            await addDoc(collection(window.db, "orders"), item);
                         }
+                        showToast('تم استيراد ورفع البيانات إلى Firebase بنجاح');
                     }
                 } catch (err) {
                     showToast('خطأ في صيغة الملف المستورد', true);
@@ -541,12 +554,12 @@
             const filterPriority = document.getElementById('filter-priority')?.value || '';
 
             const orders = globalOrders.filter(o => {
-                const matchesSearch = o.title.toLowerCase().includes(searchVal) || 
-                                     o.code.toLowerCase().includes(searchVal) || 
+                const matchesSearch = (o.title && o.title.toLowerCase().includes(searchVal)) || 
+                                     (o.code && o.code.toLowerCase().includes(searchVal)) || 
                                      (o.contractor && o.contractor.toLowerCase().includes(searchVal));
                 const matchesWilayat = !filterWilayat || o.wilayat === filterWilayat;
                 const matchesStatus = !filterStatus || o.status === filterStatus;
-                const matchesPriority = !filterPriority || o.priority.includes(filterPriority);
+                const matchesPriority = !filterPriority || (o.priority && o.priority.includes(filterPriority));
 
                 return matchesSearch && matchesWilayat && matchesStatus && matchesPriority;
             });
@@ -598,13 +611,13 @@
                     <td class="p-3 text-xs text-slate-700">${o.contractor || 'غير محدد'}</td>
                     <td class="p-3 font-bold text-slate-800">${o.cost} ر.ع</td>
                     <td class="p-3">
-                        <span class="px-2.5 py-1 rounded-md text-xs font-bold ${o.priority.includes('عالية') ? 'bg-red-100 text-red-800' : (o.priority === 'متوسطة' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')}">
-                            ${o.priority}
+                        <span class="px-2.5 py-1 rounded-md text-xs font-bold ${o.priority && o.priority.includes('عالية') ? 'bg-red-100 text-red-800' : (o.priority === 'متوسطة' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')}">
+                            ${o.priority || 'عادية'}
                         </span>
                     </td>
                     <td class="p-3">
-                        <label for="status-select-${o.id}" class="sr-only">تغيير حالة أمر العمل ${o.code}</label>
-                        <select id="status-select-${o.id}" onchange="quickChangeStatus(${o.id}, this.value)" class="text-xs p-1.5 rounded-lg font-bold border ${o.status === 'مغلق' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (o.status === 'قيد التنفيذ' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-800 border-blue-300')}">
+                        <label for="status-select-${o.firestoreId}" class="sr-only">تغيير حالة أمر العمل ${o.code}</label>
+                        <select id="status-select-${o.firestoreId}" onchange="quickChangeStatus('${o.firestoreId}', this.value)" class="text-xs p-1.5 rounded-lg font-bold border ${o.status === 'مغلق' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (o.status === 'قيد التنفيذ' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-800 border-blue-300')}">
                             <option value="مفتوح" ${o.status === 'مفتوح' ? 'selected' : ''}>مفتوح</option>
                             <option value="قيد التنفيذ" ${o.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option>
                             <option value="معلق" ${o.status === 'معلق' ? 'selected' : ''}>معلق</option>
@@ -613,8 +626,8 @@
                     </td>
                     <td class="p-3 text-center space-x-1 space-x-reverse no-print">
                         <button onclick="window.print()" aria-label="طباعة ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="طباعة"><i class="fa-solid fa-print" aria-hidden="true"></i></button>
-                        <button onclick="openModalForEdit(${o.id})" aria-label="تعديل ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="تعديل"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
-                        <button onclick="deleteOrder(${o.id})" aria-label="حذف ${o.code}" class="text-xs bg-slate-100 hover:bg-red-100 hover:text-red-700 text-slate-700 p-2 rounded-lg transition" title="حذف"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                        <button onclick="openModalForEdit('${o.firestoreId}')" aria-label="تعديل ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="تعديل"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
+                        <button onclick="deleteOrder('${o.firestoreId}')" aria-label="حذف ${o.code}" class="text-xs bg-slate-100 hover:bg-red-100 hover:text-red-700 text-slate-700 p-2 rounded-lg transition" title="حذف"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
                     </td>
                 </tr>
             `).join('');
@@ -622,8 +635,7 @@
 
         window.onload = function() {
             initMap();
-            fetchOrders();
-            setupRealtime();
+            setupFirebaseRealtime();
         };
     </script>
 </body>
