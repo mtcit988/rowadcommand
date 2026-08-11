@@ -211,8 +211,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label for="code" class="text-xs font-bold text-slate-700 block mb-1">رقم أمر العمل المرجعي</label>
-                        <input type="text" id="code" readonly class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-slate-100 font-bold text-blue-950 cursor-not-allowed">
+                        <label for="code" class="text-xs font-bold text-slate-700 block mb-1">رقم أمر العمل المرجعي <span class="text-red-600">*</span></label>
+                        <!-- تم إزالة خاصية readonly ليتمكن المستخدم من كتابة رقم مرجعي مخصص -->
+                        <input type="text" id="code" required class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white font-bold text-blue-950 focus:ring-2 focus:ring-blue-950 outline-none" placeholder="مثال: WO-2026-101">
                     </div>
                     <div>
                         <label for="type" class="text-xs font-bold text-slate-700 block mb-1">نوع الصيانة</label>
@@ -400,7 +401,7 @@
             const modal = document.getElementById('modal');
             const isHidden = modal.classList.toggle('hidden');
             if (!isHidden) {
-                document.getElementById('title').focus();
+                document.getElementById('code').focus();
             }
         }
 
@@ -454,7 +455,7 @@
             const editId = document.getElementById('edit-id').value;
             const { collection, addDoc, updateDoc, doc } = window.firestoreTools;
 
-            const codeStr = document.getElementById('code').value;
+            const codeStr = document.getElementById('code').value.trim();
             const numId = parseInt(codeStr.replace(/\D/g, '')) || Date.now();
 
             const payload = {
