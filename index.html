@@ -1,12 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
-    <a href="index-en.html" class="bg-blue-800 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-1.5">
-    <i class="fa-solid fa-globe"></i> English
-</a>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام رُواد (ROWADS) - المنظومة السحابية لإدارة الطرق</title>
+    <title>ROWADS Platform - Road Operations Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
@@ -15,14 +12,16 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Firebase SDK (Modular Version 10) -->
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { 
             getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // كائن الإعدادات الخاص بمشروعك في Firebase (rowads-48a34)
         const firebaseConfig = {
             apiKey: "AIzaSyAmaKM1rqHoA3EDSBs0YncKXpRmzGri1SQ",
             authDomain: "rowads-48a34.firebaseapp.com",
@@ -33,7 +32,6 @@
             measurementId: "G-0YFRB68F19"
         };
 
-        // تهيئة تطبيق Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         window.db = db;
@@ -42,392 +40,677 @@
 
     <style> 
         body { font-family: 'Tajawal', sans-serif; }
-        #map { height: 380px; width: 100%; z-index: 1; }
-        *:focus-visible {
-            outline: 3px solid #f59e0b !important;
-            outline-offset: 2px;
-        }
-        @media print {
-            header, .no-print, #map, .stats-container { display: none !important; }
-            body { background: #fff; padding: 0; }
-        }
+        #map { height: 350px; width: 100%; z-index: 1; }
+        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
     <!-- Toast Notification -->
-    <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 left-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
-        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg" aria-hidden="true"></i>
-        <span id="toast-msg" class="text-xs md:text-sm font-bold">تم تنفيذ العملية بنجاح</span>
+    <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-msg" class="text-xs md:text-sm font-bold">Operation completed successfully</span>
     </div>
 
     <!-- Header -->
-    <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40">
+    <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40 no-print">
         <div class="flex items-center gap-3">
-            <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm" aria-label="شعار رُواد">ROWADS</span>
+            <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
             <div>
-                <h1 class="text-base md:text-lg font-bold">منظومة رُواد الشاملة لإدارة وصيانة الطرق</h1>
-                <p class="text-xs text-slate-300">دائرة الطرق - محافظة البريمي 
-                    <span class="inline-flex items-center gap-1 bg-amber-600 text-white px-2 py-0.5 rounded text-[10px] mr-2 font-bold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Firebase متصل
-                    </span>
-                </p>
+                <h1 class="text-base md:text-lg font-bold">ROWADS Road Operations & Management System</h1>
+                <p class="text-xs text-slate-300">Roads Department - Al Buraimi Governorate</p>
             </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2 no-print">
-            <label class="bg-emerald-700 hover:bg-emerald-600 focus-within:ring-2 focus-within:ring-white text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow cursor-pointer transition flex items-center gap-2">
-                <i class="fa-solid fa-file-import" aria-hidden="true"></i>
-                <span>استيراد</span>
-                <input type="file" id="import-file" accept=".json" class="sr-only" onchange="importData(event)" aria-label="استيراد ملف JSON">
-            </label>
-            <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-2">
-                <i class="fa-solid fa-file-export" aria-hidden="true"></i> تصدير JSON
-            </button>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="index.html" class="bg-blue-800 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-1.5">
+                <i class="fa-solid fa-globe"></i> العربية
+            </a>
             <button onclick="openModalForCreate()" class="bg-amber-500 hover:bg-amber-400 text-blue-950 font-black px-4 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-2">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i> إنشاء أمر عمل جديد
+                <i class="fa-solid fa-plus"></i> Create New Work Order
             </button>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto mt-6 px-4 space-y-6">
-
-        <!-- الإحصائيات الشاملة -->
-        <section aria-label="لوحة الإحصائيات" class="grid grid-cols-2 md:grid-cols-4 gap-4 stats-container">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-xs text-slate-600 font-bold">إجمالي الأوامر المسجلة</p>
+    <main class="max-w-7xl mx-auto mt-6 px-4 space-y-6 no-print">
+        <!-- Stats -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">Total Work Orders</p>
                 <h2 id="stat-total" class="text-2xl md:text-3xl font-black text-blue-950 mt-1">0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-xs text-slate-600 font-bold">أوامر قيد التنفيذ / مفتوحة</p>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">In Progress / Open</p>
                 <h2 id="stat-open" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-xs text-slate-600 font-bold">الأوامر المكتملة والمغلقة</p>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">Completed / Closed</p>
                 <h2 id="stat-closed" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <p class="text-xs text-slate-600 font-bold">إجمالي الميزانية التقديرية</p>
-                <h2 id="stat-cost" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">0 ر.ع</h2>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p class="text-xs text-slate-600 font-bold">Total Estimated Budget</p>
+                <h2 id="stat-cost" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">0.000 OMR</h2>
             </div>
         </section>
 
-        <!-- الخريطة التفاعلية -->
-        <section aria-label="الخريطة التفاعلية" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-4 no-print">
-            <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-                <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2">
-                    <i class="fa-solid fa-map-location-dot text-amber-500" aria-hidden="true"></i> الخريطة التفاعلية لأوامر العمل ومواقع الصيانة
-                </h2>
-                <div class="flex gap-2">
-                    <button onclick="locateUser()" class="bg-blue-100 hover:bg-blue-200 text-blue-950 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-crosshairs" aria-hidden="true"></i> موقعي الحالي
-                    </button>
-                    <button onclick="toggleMapTile()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-layer-group" aria-hidden="true"></i> تغيير نمط الخريطة
-                    </button>
-                </div>
-            </div>
-            <div id="map" role="region" aria-label="خريطة مواقع الصيانة" class="rounded-lg border border-slate-300"></div>
+        <!-- Map -->
+        <section class="bg-white rounded-xl border shadow-sm p-4">
+            <h2 class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-map-location-dot text-amber-500"></i> Work Sites Map
+            </h2>
+            <div id="map" class="rounded-lg border"></div>
         </section>
 
-        <!-- شريط البحث والتصفية -->
-        <section aria-label="أدوات البحث والفلترة" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 no-print">
-            <h3 class="font-bold text-xs text-slate-600 flex items-center gap-1.5">
-                <i class="fa-solid fa-filter text-amber-500" aria-hidden="true"></i> أدوات البحث والتصفية
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                    <label for="search-input" class="sr-only">بحث في الأوامر</label>
-                    <input type="text" id="search-input" oninput="render()" placeholder="بحث بالوصف، المرجع، المقاول..." class="w-full border border-slate-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-950">
-                </div>
-                <div>
-                    <label for="filter-wilayat" class="sr-only">تصفية حسب الولاية</label>
-                    <select id="filter-wilayat" onchange="render()" class="w-full border border-slate-300 p-2.5 rounded-lg text-xs bg-white">
-                        <option value="">جميع الولايات</option>
-                        <option value="البريمي">البريمي</option>
-                        <option value="محضة">محضة</option>
-                        <option value="السنينة">السنينة</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="filter-status" class="sr-only">تصفية حسب الحالة</label>
-                    <select id="filter-status" onchange="render()" class="w-full border border-slate-300 p-2.5 rounded-lg text-xs bg-white">
-                        <option value="">جميع الحالات</option>
-                        <option value="مفتوح">مفتوح</option>
-                        <option value="قيد التنفيذ">قيد التنفيذ</option>
-                        <option value="معلق">معلق</option>
-                        <option value="مغلق">مغلق (مكتمل)</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="filter-priority" class="sr-only">تصفية حسب الأولوية</label>
-                    <select id="filter-priority" onchange="render()" class="w-full border border-slate-300 p-2.5 rounded-lg text-xs bg-white">
-                        <option value="">جميع الأولويات</option>
-                        <option value="عالية">عالية (طارئ)</option>
-                        <option value="متوسطة">متوسطة</option>
-                        <option value="عادية">عادية</option>
-                    </select>
-                </div>
-            </div>
-        </section>
-
-        <!-- جدول أوامر العمل التفصيلي -->
-        <section aria-label="جدول أسباب وأوامر العمل" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <!-- Table -->
+        <section class="bg-white rounded-xl border shadow-sm overflow-hidden">
             <div class="p-4 border-b bg-slate-50 font-bold text-slate-800 flex justify-between items-center">
-                <span>سجل وقائمة أوامر العمل الرسمية</span>
-                <span id="orders-count" class="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-bold">جاري التحميل...</span>
+                <span>Work Orders Register & BOQ Quantities</span>
+                <span id="orders-count" class="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-bold">Loading...</span>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-right text-xs md:text-sm">
+                <table class="w-full text-left text-xs md:text-sm">
                     <thead class="bg-slate-100 text-slate-700 border-b">
                         <tr>
-                            <th scope="col" class="p-3">رقم الأمر</th>
-                            <th scope="col" class="p-3">وصف العمل / الخلل</th>
-                            <th scope="col" class="p-3">الولاية والمنطقة</th>
-                            <th scope="col" class="p-3">نوع الصيانة</th>
-                            <th scope="col" class="p-3">المقاول المنفذ</th>
-                            <th scope="col" class="p-3">التكلفة</th>
-                            <th scope="col" class="p-3">الأولوية</th>
-                            <th scope="col" class="p-3">الحالة</th>
-                            <th scope="col" class="p-3 text-center no-print">الإجراءات</th>
+                            <th class="p-3">WO Code</th>
+                            <th class="p-3">Wilayat & Area</th>
+                            <th class="p-3">Issue Date</th>
+                            <th class="p-3 text-center">Duration (Days)</th>
+                            <th class="p-3">Target Completion</th>
+                            <th class="p-3">Contractor</th>
+                            <th class="p-3 text-center">BOQ Items</th>
+                            <th class="p-3">Total Cost</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="orders-table" class="divide-y divide-slate-200">
-                        <!-- تعبئة تلقائية -->
-                    </tbody>
+                    <tbody id="orders-table" class="divide-y divide-slate-200"></tbody>
                 </table>
             </div>
         </section>
-
     </main>
 
-    <!-- Modal: نافذة إنشاء وتعديل أمر العمل -->
-    <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
-                <h3 id="modal-title" class="text-base font-bold text-blue-950">إنشاء أمر عمل جديد</h3>
-                <button type="button" onclick="toggleModal()" aria-label="إغلاق النافذة" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
-                    <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
+                <h3 id="modal-title" class="text-base font-bold text-blue-950">Create New Work Order & BOQ Quantities</h3>
+                <button type="button" onclick="toggleModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
             <form id="order-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
                 <input type="hidden" id="edit-id">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                        <label for="code" class="text-xs font-bold text-slate-700 block mb-1">رقم أمر العمل المرجعي <span class="text-red-600">*</span></label>
-                        <!-- تم إزالة خاصية readonly ليتمكن المستخدم من كتابة رقم مرجعي مخصص -->
-                        <input type="text" id="code" required class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white font-bold text-blue-950 focus:ring-2 focus:ring-blue-950 outline-none" placeholder="مثال: WO-2026-101">
+                        <label class="text-xs font-bold text-slate-700 block mb-1">WO Reference Code *</label>
+                        <input type="text" id="code" required class="w-full border p-2 rounded-lg text-sm bg-white font-bold text-blue-950 outline-none" placeholder="WO-2026-101">
                     </div>
                     <div>
-                        <label for="type" class="text-xs font-bold text-slate-700 block mb-1">نوع الصيانة</label>
-                        <select id="type" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white">
-                            <option>صيانة اسفلتية وحفر</option>
-                            <option>تصريف مياه وأودية</option>
-                            <option>إنارة وأعمدة الكهرباء</option>
-                            <option>إشارات ولوحات مرورية</option>
-                            <option>أكتاف وحواجز الطرق</option>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Wilayat *</label>
+                        <select id="wilayat" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option value="Al Buraimi">Al Buraimi</option>
+                            <option value="Mahdah">Mahdah</option>
+                            <option value="Sunaynah">Sunaynah</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Area / Street *</label>
+                        <input type="text" id="region" required class="w-full border p-2 rounded-lg text-sm" placeholder="Al Shareea St.">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Work Order Issue Date *</label>
+                        <input type="date" id="issueDate" required onchange="calculateCompletionDate()" class="w-full border p-2 rounded-lg text-sm bg-white font-semibold">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Duration (in Days) *</label>
+                        <input type="number" min="1" id="durationDays" required oninput="calculateCompletionDate()" class="w-full border p-2 rounded-lg text-sm bg-white font-semibold" placeholder="e.g. 30">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Target Completion Date *</label>
+                        <input type="date" id="targetCompletionDate" required readonly class="w-full border p-2 rounded-lg text-sm bg-slate-100 font-bold text-blue-950 cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Contractor</label>
+                        <input type="text" id="contractor" class="w-full border p-2 rounded-lg text-sm" placeholder="Buraimi Contracting Co.">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Priority</label>
+                        <select id="priority" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option value="Normal">Normal</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High (Emergency)" class="text-red-600 font-bold">High (Emergency)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">Status</label>
+                        <select id="status" class="w-full border p-2 rounded-lg text-sm bg-white font-bold">
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Closed">Closed (Completed)</option>
                         </select>
                     </div>
                 </div>
 
-                <div>
-                    <label for="title" class="text-xs font-bold text-slate-700 block mb-1">وصف العمل أو المشكلة <span class="text-red-600">*</span></label>
-                    <input type="text" id="title" required class="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-950 outline-none" placeholder="مثال: إصلاح هبوط اسفلتي شديد وتأهيل الطبقة">
-                </div>
+                <fieldset class="bg-slate-50 p-3.5 rounded-xl border space-y-3">
+                    <div class="flex justify-between items-center">
+                        <legend class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-amber-500"></i> Approved Contract BOQ Items (Complete 181 Items)
+                        </legend>
+                        <button type="button" onclick="addBOQItemRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-md text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Add BOQ Item
+                        </button>
+                    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label for="wilayat" class="text-xs font-bold text-slate-700 block mb-1">الولاية</label>
-                        <select id="wilayat" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white">
-                            <option>البريمي</option>
-                            <option>محضة</option>
-                            <option>السنينة</option>
-                        </select>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs bg-white rounded-lg border">
+                            <thead class="bg-slate-200 text-slate-700 border-b">
+                                <tr>
+                                    <th class="p-2">Select Contract Item</th>
+                                    <th class="p-2 w-20">Unit</th>
+                                    <th class="p-2 w-20">Qty</th>
+                                    <th class="p-2 w-28">Unit Rate (OMR)</th>
+                                    <th class="p-2 w-28">Total (OMR)</th>
+                                    <th class="p-2 w-10 text-center">Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boq-items-body" class="divide-y"></tbody>
+                            <tfoot class="bg-slate-100 font-bold border-t">
+                                <tr>
+                                    <td colspan="4" class="p-2 text-right">Total Work Order Estimated Cost:</td>
+                                    <td class="p-2 text-blue-950 font-black text-sm" id="grand-total-display">0.000 OMR</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
-                    <div>
-                        <label for="region" class="text-xs font-bold text-slate-700 block mb-1">المنطقة / الشارع <span class="text-red-600">*</span></label>
-                        <input type="text" id="region" required class="w-full border border-slate-300 p-2.5 rounded-lg text-sm" placeholder="مثال: الخضراء / شارع الشريعة">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label for="contractor" class="text-xs font-bold text-slate-700 block mb-1">المقاول المنفذ</label>
-                        <input type="text" id="contractor" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm" placeholder="شركة البريمي للمقاولات">
-                    </div>
-                    <div>
-                        <label for="cost" class="text-xs font-bold text-slate-700 block mb-1">التكلفة التقديرية (ر.ع)</label>
-                        <input type="number" id="cost" min="0" step="any" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm" placeholder="250">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label for="priority" class="text-xs font-bold text-slate-700 block mb-1">درجة الأولوية</label>
-                        <select id="priority" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white">
-                            <option>عادية</option>
-                            <option>متوسطة</option>
-                            <option value="عالية (طارئ)" class="text-red-600 font-bold">عالية (طارئ)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="status" class="text-xs font-bold text-slate-700 block mb-1">حالة أمر العمل</label>
-                        <select id="status" class="w-full border border-slate-300 p-2.5 rounded-lg text-sm bg-white font-bold">
-                            <option value="مفتوح">مفتوح</option>
-                            <option value="قيد التنفيذ">قيد التنفيذ</option>
-                            <option value="معلق">معلق</option>
-                            <option value="مغلق">مغلق (مكتمل)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <fieldset class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
-                    <legend class="text-xs font-bold text-slate-800 flex items-center gap-1.5 px-1">
-                        <i class="fa-solid fa-location-crosshairs text-amber-500" aria-hidden="true"></i> إحداثيات الموقع الجغرافي
-                    </legend>
-                    <p class="text-[11px] text-slate-600">يمكنك النقر على الخريطة لتحديد الإحداثيات تلقائياً أو كتابتها يدويًا هنا.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                        <div>
-                            <label for="lat" class="text-[11px] font-bold text-slate-700 block mb-1">خط العرض (Latitude)</label>
-                            <input type="number" step="any" id="lat" required class="w-full border border-slate-300 p-2 rounded-lg text-xs bg-white font-mono focus:ring-2 focus:ring-blue-950" placeholder="24.25000">
-                        </div>
-                        <div>
-                            <label for="lng" class="text-[11px] font-bold text-slate-700 block mb-1">خط الطول (Longitude)</label>
-                            <input type="number" step="any" id="lng" required class="w-full border border-slate-300 p-2 rounded-lg text-xs bg-white font-mono focus:ring-2 focus:ring-blue-950" placeholder="55.78000">
-                        </div>
-                    </div>
-                    <button type="button" onclick="getCurrentLocationForModal()" class="mt-2 text-xs text-blue-950 bg-blue-100 hover:bg-blue-200 px-3 py-1.5 rounded-md font-bold transition flex items-center gap-1">
-                        <i class="fa-solid fa-location-arrow" aria-hidden="true"></i> تعيين موقعي الحالي كإحداثيات
-                    </button>
                 </fieldset>
 
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-                    <button type="button" onclick="toggleModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">إلغاء</button>
-                    <button type="submit" class="px-5 py-2 bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-lg text-sm shadow transition">حفظ البيانات</button>
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border text-xs">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-0.5">Latitude (Lat)</label>
+                        <input type="number" step="any" id="lat" required class="w-full border p-1.5 rounded text-xs bg-white">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-0.5">Longitude (Lng)</label>
+                        <input type="number" step="any" id="lng" required class="w-full border p-1.5 rounded text-xs bg-white">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="toggleModal()" class="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-lg text-sm shadow">Save Work Order</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Official Printable PDF Template - Exact Ministry Header Match -->
+    <div id="pdf-template" dir="ltr" class="hidden bg-white p-8 max-w-3xl mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+        
+        <!-- Header Section Exact Like MTCIT PDF -->
+        <div class="text-center text-[11px] font-bold text-purple-800 mb-1" style="font-family: 'Amiri', serif;">بسم الله الرحمن الرحيم</div>
+        <div class="flex justify-between items-center border-b pb-4 mb-4">
+            <!-- Left Header: English Ministry Titles -->
+            <div class="text-left font-serif text-[11px] text-purple-900 leading-snug w-1/3">
+                <p class="italic text-[13px] font-bold">Sultanate of Oman</p>
+                <p class="font-sans text-[10px]">Ministry of Transport, Communications<br>& Information Technology</p>
+                <p class="font-serif italic text-[11px]">Muscat</p>
+            </div>
+            
+            <!-- Center Header: National Khanjar & Swords Emblem -->
+            <div class="w-1/3 flex justify-center">
+                <svg class="w-16 h-16 text-red-700 fill-current" viewBox="0 0 100 100">
+                    <path d="M50 10 L54 22 L66 22 L56 30 L60 42 L50 34 L40 42 L44 30 L34 22 L46 22 Z" />
+                    <path d="M25 65 Q50 85 75 65" fill="none" stroke="currentColor" stroke-width="4"/>
+                    <path d="M30 35 L70 65 M30 65 L70 35" stroke="currentColor" stroke-width="3"/>
+                </svg>
+            </div>
+
+            <!-- Right Header: Arabic Ministry Titles -->
+            <div class="text-right font-semibold text-[12px] text-purple-900 leading-snug w-1/3" style="font-family: 'Amiri', serif;">
+                <p class="text-[14px] font-black">سلطنة عمان</p>
+                <p class="text-[11px] font-bold">وزارة النقل والاتصالات وتقنية المعلومات</p>
+                <p class="text-[12px] font-bold">مسقط</p>
+            </div>
+        </div>
+
+        <!-- Official Header Project Sub-Titles -->
+        <div class="text-center font-bold text-red-700 space-y-0.5 mb-4 uppercase text-[10.5px]">
+            <p class="tracking-wide">SULTANATE OF OMAN</p>
+            <p>MINISTRY OF TRANSPORT, COMMUNICATIONS & INFORMATION TECHNOLOGY</p>
+            <p>DIRECTORATE GENERAL OF ROAD & LAND TRANSPORT</p>
+            <p class="text-red-700 mt-2 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
+            <p class="text-red-700 font-black">( AL BURAIMI GOVERNORATE ) - ( FOR 5 YEARS )</p>
+        </div>
+
+        <!-- Order Information Table Block -->
+        <div class="grid grid-cols-12 gap-y-1 text-[11px] font-bold mb-4 border-t border-b py-2 text-slate-900 text-left">
+            <div class="col-span-4 uppercase">WORK ORDER NO</div>
+            <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
+
+            <div class="col-span-4 uppercase">DATE OF ISSUE</div>
+            <div class="col-span-8" id="pdf-issue-date">---</div>
+
+            <div class="col-span-4 uppercase">PERIOD</div>
+            <div class="col-span-8" id="pdf-duration">---</div>
+
+            <div class="col-span-4 uppercase">DATE OF COMP</div>
+            <div class="col-span-8" id="pdf-target-date">---</div>
+
+            <div class="col-span-4 uppercase">LOCATION</div>
+            <div class="col-span-8" id="pdf-location">---</div>
+
+            <div class="col-span-4 uppercase">ATTACHMENT</div>
+            <div class="col-span-8">: LOCATION AND DETAILS</div>
+        </div>
+
+        <p class="font-bold text-[11px] mb-2 text-left">List of work as per the Work Order No.</p>
+
+        <!-- BOQ Items Table -->
+        <table class="w-full border-collapse border border-slate-900 text-[10px] mb-6 text-left">
+            <thead>
+                <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-900">
+                    <th class="border border-slate-900 p-1.5 w-20 text-center">Item No.</th>
+                    <th class="border border-slate-900 p-1.5 text-center">Description</th>
+                    <th class="border border-slate-900 p-1.5 w-16 text-center">Unit</th>
+                    <th class="border border-slate-900 p-1.5 w-20 text-center">Unit rate<br>(R.O.)</th>
+                    <th class="border border-slate-900 p-1.5 w-20 text-center">Estimated<br>Quantity</th>
+                    <th class="border border-slate-900 p-1.5 w-24 text-center">Amount (R.O.)</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-items-body" class="divide-y divide-slate-900"></tbody>
+            <tfoot>
+                <tr class="font-black border-t border-slate-900">
+                    <td colspan="5" class="border border-slate-900 p-1.5 text-right uppercase">Total cost of the maintenance order (R.O)</td>
+                    <td class="border border-slate-900 p-1.5 text-center text-slate-950 font-black text-[11px]" id="pdf-grand-total">0.000</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- Signatures Block -->
+        <div class="pt-6 border-t border-slate-300">
+            <div class="grid grid-cols-2 gap-8 text-center font-bold text-[11px] mb-12">
+                <div>
+                    <p>Project Engineer / Road Supervisor</p>
+                    <p class="text-slate-500 text-[10px]">(R.D)</p>
+                </div>
+                <div>
+                    <p>Head Section of Road Maintenance</p>
+                </div>
+            </div>
+            <div class="text-center font-bold text-[11px]">
+                <p>Director of Governorate Road Department</p>
+            </div>
+        </div>
+
+        <!-- Footer Section Exact Like MTCIT PDF -->
+        <div class="mt-12 pt-2 border-t border-red-700 flex justify-between items-center text-[9px] text-red-800 font-bold">
+            <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
+            <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
+        </div>
+    </div>
+
     <script>
-        let map, markersGroup, currentTileLayer;
-        let isSatellite = false;
+        const contractBOQLibrary = [
+            { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
+            { itemNo: "1.4.3(i)", desc: "Mobilization and demobilization of Contractor's site facilities", unit: "L.S.", price: 42500 },
+            { itemNo: "1.4.3(ii)", desc: "Maintenance of Contractor's site facilities", unit: "month", price: 20000 },
+            { itemNo: "1.7.6(i)", desc: "Maintenance and protection of traffic in all works orders that needs a diversion and as directed by the Engineer", unit: "-", price: 0 },
+            { itemNo: "1.7.6(ii)", desc: "Supply and compaction of sub-base on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", price: 0.1 },
+            { itemNo: "1.7.6(iii)", desc: "Supply and compaction of bituminous base course on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", price: 1 },
+            { itemNo: "1.7.6(iv)", desc: "Supply of bituminous prime coat on Diversions where ordered by the Engineer", unit: "kg", price: 0.1 },
+            { itemNo: "1.11.8(i)", desc: "Provision of As-built drawings, record drawings, record specifications and miscellaneous records as specified (if required or as Engineer instruction)", unit: "-", price: 0 },
+            { itemNo: "1.14.8(i)", desc: "Provision, erection, relocation, and maintenance of project signboards (aluminium type)", unit: "nr.", price: 2000 },
+            { itemNo: "1.14.8(ii)", desc: "Removal of project signboards (aluminium type)", unit: "nr.", price: 96.22 },
+            { itemNo: "2.1.5(i)a", desc: "Clearing of Box Culverts, Pipe Culverts, culvert aprons and vented culverts . (any Size, any Number of Cells within the Governorate)", unit: "No.of Cells", price: 12 },
+            { itemNo: "2.1.5(i)b", desc: "Cleaning of Side Ditche's and Channel's any Size (see special specification section 2.1.1. C)", unit: "Lin.m", price: 1 },
+            { itemNo: "2.1.5(i)c", desc: "Cleaning of Road Surface from debris Materials and windblown sand, fallen rocks (any size), and sand dunes (any quantities)", unit: "Lin.m", price: 1 },
+            { itemNo: "2.1.5(i)d", desc: "Cleaning of Bridges Wadi Bed, Floodway and vented Floodway from debris, Soil and Boulders", unit: "Location", price: 22 },
+            { itemNo: "2.2.5(ii)", desc: "Removal and Disposal of reinforced concrete (any Type, No. of Cells and Size of Structure)", unit: "cu.m.", price: 1.9 },
+            { itemNo: "2.2.5(iii)", desc: "Removal and Disposal of mass concrete (any Type, No. of Cells and Size of Structure)", unit: "cu.m.", price: 1.9 },
+            { itemNo: "2.2.5(v)", desc: "Removal and Disposal of curbs (any Type)", unit: "lin.m.", price: 1.9 },
+            { itemNo: "2.2.5(vi)", desc: "Removal and Disposal of tiles (any Type)", unit: "sq.m.", price: 1.9 },
+            { itemNo: "2.2.5(vii)", desc: "Removal and Disposal of Pipe Culvert (any Type, No. of Cells and Diameter)", unit: "lin.m.", price: 1.9 },
+            { itemNo: "2.2.5(viii)a", desc: "Removal and Disposal of existing bituminous pavement (any Type and Variable Thickness)", unit: "cu.m.", price: 3.2 },
+            { itemNo: "2.2.5(viii)b", desc: "Removal and Disposal of existing Speed Humps (any Type and Variable Thickness)", unit: "nr.", price: 18 },
+            { itemNo: "2.2.5(x)a", desc: "Removal and disposal/delivary of existing steel safety barrier beem including posts, foundations and accessories, (any type of Guard Rails) or Refixing the same. (full system)", unit: "lin.m.", price: 7.4 },
+            { itemNo: "2.2.5(x)b", desc: "Removal and disposal/dilevary of existing cable steel wire barrier system including post, foundation and Accessories, or Refixing the same.", unit: "lin.m.", price: 5.5 },
+            { itemNo: "2.2.5(x)c", desc: "Removal and disposal/delivary of Impact Attenuator any types including post, foundation, sand and Accessories, or Refixing the same.", unit: "nr.", price: 55 },
+            { itemNo: "2.2.5(xi)", desc: "Removal and disposal/dilevary of Concrete safety barrier including foundation, any type and any size or Refixing the same.", unit: "lin.m.", price: 9 },
+            { itemNo: "2.2.5(xii)a", desc: "Removal disposal/delivary of sign boards (warning, Regulatory, Informative, Advanced Directional, Chevron etc.) including post/posts and foundation", unit: "nr.", price: 10 },
+            { itemNo: "2.2.5(xii)b", desc: "Removal disposal/delivary of Overhead sign boards (Gantry and Height Restriction Gantry etc.) including Support Single and Double posts, foundations", unit: "nr.", price: 325 },
+            { itemNo: "2.2.5(xii)c", desc: "Removal disposal/delivary of Overhead sign boards Single post (Cantilever, Height Restriction Gantry etc.) including foundation, Bracing", unit: "nr.", price: 325 },
+            { itemNo: "2.2.5(xii)d", desc: "Removal disposal/delivary of Overhead sign boards double post (Gantry and Height Restriction Gantry etc.) for Bracing, Catwalk Assembly", unit: "nr.", price: 325 },
+            { itemNo: "2.2.5(xii)e", desc: "Removal disposal/delivary of Overhead sign boards Single post (Cantilever, Height Restriction Gantry etc.) for Bracing, Catwalk Assembly", unit: "nr.", price: 325 },
+            { itemNo: "2.2.5(xiii)a", desc: "Removal disposal/delivary of Floodway Marker and Water Depth Gauge post and foundation, any Type and any size, or Refixing the same.", unit: "nr.", price: 7.5 },
+            { itemNo: "2.2.5(xiii)b", desc: "Removal disposal/delivary of Flat Delineatot/Tubular Channelizer, any Type and any size, or Refixing the same.", unit: "nr.", price: 7.5 },
+            { itemNo: "2.2.5(xiii)c", desc: "Removal disposal/delivary of Emergency Opening Bollards, including Foundations, Chain and Lock any Type and any size or Refixing the same.", unit: "nr.", price: 7.5 },
+            { itemNo: "2.2.5(xiv)a", desc: "Removal of re-usable (refixing) Beam of steel safety barrier including Accessories (as Existing).", unit: "lin.m.", price: 3 },
+            { itemNo: "2.2.5(xiv)b", desc: "Removal of re-usable (Refixing) Post of steel safety barrier including Foundation and Accessories (as Existing).", unit: "nr.", price: 5 },
+            { itemNo: "2.2.5(xiv)c", desc: "Removal of re-usable (refixing) Front Plate of Impact Attenuator including Accessories", unit: "nr.", price: 45 },
+            { itemNo: "2.2.5(xiv)d", desc: "Removal of re-usable (refixing) Beam of Impact Attenuator including Accessories", unit: "nr.", price: 27 },
+            { itemNo: "2.2.5(xiv)e", desc: "Removal of re-usable (Refixing) Post ( the inside inversed U post in the middel) of Impact Attenuator including Foundation and Accessories .", unit: "nr.", price: 27 },
+            { itemNo: "2.2.5(xiv)f", desc: "Removal of re-usable (Refixing) expandable modules/cartridges or steel type or others such as barrels of Impact Attenuator", unit: "nr.", price: 27 },
+            { itemNo: "2.2.5(xv)", desc: "Removal of re-usable (Refixing) Concrete Safety Barrier including Foundation (as Existing).", unit: "lin.m.", price: 4 },
+            { itemNo: "2.2.5(xviii)", desc: "Removal and disposal of all types of drainage protection works (Gabion Box, Grouted and Loose rip-rap) including Cut off wall", unit: "cu.m.", price: 4.6 },
+            { itemNo: "2.2.5(xix)", desc: "Removal and disposal/delivary of existing fences and gates (any type and any height) including Foundation, or Refixe the same.", unit: "lin.m.", price: 4.6 },
+            { itemNo: "2.2.5(xxvi)b", desc: "Removal and delivary OR re-use (Refixing) of street light pole with accessories, including pole and foundation, as directed by Engineer", unit: "nr", price: 80 },
+            { itemNo: "2.2.5(xxvi)c", desc: "Removal and delivary OR re-use (Refixing) of Traffic signals with accessories including post and foundation (any type)", unit: "nr", price: 350 },
+            { itemNo: "2.2.5(xxvi)d", desc: "Removal and delivary of Speed control Camera with accessories, as directed by Engineer", unit: "nr", price: 150 },
+            { itemNo: "2.2.5(xxvii)", desc: "Removal and delivary of flage pole, as directed by Engineer", unit: "nr", price: 13.9 },
+            { itemNo: "2.2.5(xxviii)", desc: "Removal and delivary OR re-use (Refixing) of Debris Deflectors including foundations (any Type and any Height)", unit: "nr.", price: 13.9 },
+            { itemNo: "2.2.5(xxx)a", desc: "Removal and disposal/delivary of existing Structural Steel, Steel Railing (any type and any grade including Foundation at the Bridges", unit: "lin.m.", price: 5 },
+            { itemNo: "2.3.6(i)", desc: "Unclassified Excavation to Embankment and Dykes as directed by the Engineer", unit: "cu.m.", price: 0.5 },
+            { itemNo: "2.3.6(ii)a", desc: "Excavation of unstable material out sides Right-of-Way as directed by the Engineer", unit: "cu.m.", price: 0.5 },
+            { itemNo: "2.3.6(ii)b", desc: "Excavation of unstable material at cut side slope as directed by the Engineer", unit: "cu.m.", price: 0.5 },
+            { itemNo: "2.4.6(i)", desc: "Borrow excavation for road, edge side slope, Dyke and diversion", unit: "cu.m.", price: 1.3 },
+            { itemNo: "2.6.6(i)a", desc: "Sub-grade preparation in cut for road way, any thicness.", unit: "cu.m.", price: 0.6 },
+            { itemNo: "2.6.6(i)b", desc: "Sub-base preparation including regaulating layer of anythickness and any type.", unit: "cu.m.", price: 0.6 },
+            { itemNo: "2.7.6(i)", desc: "Unclassified structural excavation (Depth from 0 to 2.0m)", unit: "cu.m.", price: 1.85 },
+            { itemNo: "2.7.6(ii)", desc: "Unclassified structural excavation (depth from > 2.0m to ≤ 4.0m)", unit: "cu.m.", price: 1.85 },
+            { itemNo: "2.7.6(iii)", desc: "Unclassified structural excavation (depth from > 4.0m)", unit: "cu.m.", price: 1.85 },
+            { itemNo: "2.7.6(iv)", desc: "Unclassified structural excavation (under water to any depth)", unit: "cu.m.", price: 1.85 },
+            { itemNo: "3.2.6(ii)", desc: "Granular Sub-Base (Class B), (any thickness)", unit: "cu.m.", price: 1.9 },
+            { itemNo: "3.3.6(ii)", desc: "Aggregate Base Course (Class B), (any thickness)", unit: "cu.m.", price: 2 },
+            { itemNo: "4.2.8(i)", desc: "Bituminous prime coat", unit: "kg", price: 0.4 },
+            { itemNo: "4.2.8(ii)", desc: "Bituminous tack coat", unit: "kg", price: 0.35 },
+            { itemNo: "4.2.8(iii)", desc: "Polimar modified tack coat", unit: "kg", price: 0.1 },
+            { itemNo: "4.4.14(ii)", desc: "Bituminous base course (Class B) (variable thickness)", unit: "cu.m.", price: 60 },
+            { itemNo: "4.4.14(iv)", desc: "Polimar modified bituminous base course (Class B) (variable thickness)", unit: "cu.m.", price: 4.65 },
+            { itemNo: "4.4.14(v)", desc: "Superpave Bituminous Base Course (variable thickness)", unit: "cu.m.", price: 4.65 },
+            { itemNo: "4.5.14(iii)", desc: "Bituminous wearing course (Class B) (variable thickness)", unit: "cu.m.", price: 60 },
+            { itemNo: "4.5.14(vi)", desc: "Polimar modified Bituminous wearing course (Class B) (variable thickness)", unit: "cu.m.", price: 4.65 },
+            { itemNo: "4.4.14(vii)", desc: "Superpave Bituminous Wearing Course (variable thickness)", unit: "cu.m.", price: 4.65 },
+            { itemNo: "4.6.10(iii)", desc: "Bituminous Slurry Seal Coats", unit: "sq.m.", price: 5 },
+            { itemNo: "4.7.14(ii)", desc: "Bituminous Patching Work", unit: "cu.m.", price: 130 },
+            { itemNo: "4.9.11(i)", desc: "Surface milling (thickness 5cm maximum)", unit: "sq.m.", price: 2.5 },
+            { itemNo: "4.9.11(ii)", desc: "Crack Sealing", unit: "lin.m.", price: 3 },
+            { itemNo: "4.9.11 (iii)", desc: "Pavement Repairs (Overlay and Surface Preparation)", unit: "sq.m.", price: 6 },
+            { itemNo: "4.9.11 (iv)", desc: "Pavement Repairs (Complete Reconstruction)", unit: "sq.m.", price: 8 },
+            { itemNo: "4.9.11(vi)", desc: "Saw Cut in Asphalt Pavement (any thickness)", unit: "lin.m.", price: 1 },
+            { itemNo: "4.10.6(ii)", desc: "Speed humps including marking and signs", unit: "nr.", price: 500 },
+            { itemNo: "5.1.7(i)B466", desc: "Concrete Class 15/20 as blinding for all reinforced concrete", unit: "cu.m.", price: 14 },
+            { itemNo: "5.1.7(i)b", desc: "Concrete Class 35/20 for box culvert, wing wall, retaining wall, head wall, apron slab", unit: "cu.m.", price: 16 },
+            { itemNo: "5.1.7(i)c", desc: "Reparing Works of Concrete Structure including Concrete Pavement Works as Existing", unit: "cu.m.", price: 18 },
+            { itemNo: "5.2.6(ii)", desc: "High tensile steel bar reinforcement of any diameter", unit: "t.", price: 410 },
+            { itemNo: "5.2.6(iii)", desc: "Fabric wire mesh reinforcement of any size", unit: "t.", price: 325 },
+            { itemNo: "5.7.6(ii)", desc: "Reinforced Cement Concrete Pavement", unit: "cu.m.", price: 37 },
+            { itemNo: "5.10.6(i)", desc: "Bituminous paint (two coats)", unit: "sq.m.", price: 0.9 },
+            { itemNo: "5.10.6(iii)", desc: "Epoxy Coating to Internal Surfaces of Concrete (Culverts, Bridges, Overpass and Underpass)", unit: "sq.m.", price: 2.3 },
+            { itemNo: "6.6(i)", desc: "Providing and Installing Structual Steel (any Grade).", unit: "t.", price: 280 },
+            { itemNo: "7.6 (iii)", desc: "Painting of Existing Steel Railing (Bridges, Vehicular/Pedestrian Overpass and Underpass, etc,)", unit: "lin.m.", price: 2.8 },
+            { itemNo: "7.6 (iv)a", desc: "Painting of Existing Sign Post (any Type and any diameter)", unit: "nr.", price: 5.5 },
+            { itemNo: "7.6 (iv)b", desc: "Painting of Existing Floodway Marker and Water Guage Posts (any Type and any Size)", unit: "nr.", price: 2.8 },
+            { itemNo: "7.6 (iv)c", desc: "Painting of Existing Emergency Opening Bollard (any Type, Size and any diameter)", unit: "nr.", price: 2.8 },
+            { itemNo: "7.6 (iv)d", desc: "Repainting of Existing Guard Rail Beam with anti-salted and Zenk (any Type and any Size)", unit: "lin.m.", price: 2.5 },
+            { itemNo: "7.6 (iv)e", desc: "Repainting of Existing Concrete Barrier (any Type and any Size)", unit: "lin.m.", price: 4.6 },
+            { itemNo: "8.1.6(ii)", desc: "Providing and Installing Reinforced Precast concrete pipe culvert (any type and any Diameter)", unit: "lin.m.", price: 80 },
+            { itemNo: "8.2.6(i)", desc: "Storm Sewer (any type and any diameter)", unit: "lin.m.", price: 5 },
+            { itemNo: "8.3.6(i)", desc: "Removal / Providing and Installing, Manholes Frame and Covers including Lock Providing", unit: "nr.", price: 40 },
+            { itemNo: "8.3.6(ii)", desc: "Removal, Providing and Installing Grated inlet concrete cover in the medain", unit: "nr.", price: 20 },
+            { itemNo: "8.4.6(i)", desc: "Removal, Providing and Installing Gully Grate and Frame including Lock", unit: "nr.", price: 20 },
+            { itemNo: "8.4.6(ii)", desc: "Removal, Providing and Installing Drainage Pipe in Structure (any Type and any Diameter)", unit: "lin.m.", price: 5 },
+            { itemNo: "11.5.6(ii)", desc: "Removal, Providing and Installing of Bridge Existing Elastomeric Expansion joint as Existing", unit: "lin.m.", price: 5 },
+            { itemNo: "11.5.6(vi)", desc: "Removal, Providing and Installing of Bridge Existing Asphaltic Plug joint as Existing", unit: "lin.m.", price: 5 },
+            { itemNo: "9.1.6(i)", desc: "Loose Stone Riprap for Side Slope, Horizonal and Cut off wall (any Class)", unit: "cu.m.", price: 14 },
+            { itemNo: "9.1.6(ii)", desc: "Mortared Stone Riprap for Side Slope, Horizonal and Cut off wall (any Class)", unit: "cu.m.", price: 33 },
+            { itemNo: "9.2.6(i)", desc: "Gabion Box including Steel angles for Side Slope, Horizonal and Cut off wall", unit: "cu.m.", price: 25 },
+            { itemNo: "9.4.6 (iii)", desc: "Spread Concrete (Shotcrete) with mesh Reinforcement (any thicness)", unit: "Sq.m.", price: 23 },
+            { itemNo: "9.6.6(i)", desc: "Reinforced Concrete Slope Protection including Cut off Wall (any thickness)", unit: "cu.m.", price: 65 },
+            { itemNo: "9.9.6(ii)", desc: "Grouted Stone Ditch Lining (any Type and any thickness).", unit: "Sq.m.", price: 11 },
+            { itemNo: "12.1.7(i)", desc: "Precast Concrete Tiles Paving (any Type)", unit: "sq.m.", price: 3.75 },
+            { itemNo: "12.1.7(ii)", desc: "Precast Concrete Block Paving (any Type)", unit: "sq.m.", price: 3.75 },
+            { itemNo: "12.1.7(iii)", desc: "Natural Stone Paving (any Type)", unit: "sq.m.", price: 3.7 },
+            { itemNo: "12.1.7(v)a", desc: "Precast Concrete Curb (Non-Mountable Type)", unit: "lin.m.", price: 4.65 },
+            { itemNo: "12.1.7(v)b", desc: "Precast Concrete Curb (Mountable Type)", unit: "lin.m.", price: 4.7 },
+            { itemNo: "12.1.7(v)c", desc: "Precast Concrete Curb (Flash Type)", unit: "lin.m.", price: 4.7 },
+            { itemNo: "12.1.7(v)d", desc: "Precast Concrete Curb (Lip Type)", unit: "lin.m.", price: 4.7 },
+            { itemNo: "12.1.7(v)e", desc: "Precast Concrete Curb (Edge Type)", unit: "lin.m.", price: 4.7 },
+            { itemNo: "13.1.7(i)", desc: "W-Beam Guard Rail, Standard Section (as Existing)", unit: "lin.m.", price: 20 },
+            { itemNo: "13.1.7(ii)", desc: "W-Beam Guard Rail, transition section including posts and foundation (as Existing)", unit: "lin.m.", price: 25 },
+            { itemNo: "13.1.7(iii)a", desc: "W-Beam Guard Rail, terminal section for departure end including posts and foundation", unit: "nr.", price: 35 },
+            { itemNo: "13.1.7(iii)b", desc: "W-Beam Guard Rail, fish tail (as Existing)", unit: "nr.", price: 40 },
+            { itemNo: "13.1.7(iv)", desc: "W-Beam Guard Rail Post including Foundation and accassories (as Existing)", unit: "nr.", price: 34.5 },
+            { itemNo: "13.1.7(v)", desc: "Thrie Beam Guard Rail, Standard Section (as Existing)", unit: "lin.m.", price: 14 },
+            { itemNo: "13.1.7(vi)", desc: "Thrie Beam Guard Rail, Transition Section including Posts, foundations and accassory", unit: "lin.m.", price: 14 },
+            { itemNo: "13.1.7(vii)", desc: "Thrie Beam Guard Rail, terminal section for departure end including posts, reflectors and foundation", unit: "nr.", price: 14 },
+            { itemNo: "13.1.7(viii)", desc: "Thrie Beam Guard Rail Post including Foundation and accassories (as Existing)", unit: "nr.", price: 14 },
+            { itemNo: "13.1.7(ix)", desc: "Concrete Barrier, Single Face including Foundation (any Type)", unit: "lin.m.", price: 50 },
+            { itemNo: "13.1.7(x)", desc: "Concrete Barrier, Double Face including Foundation (any Type)", unit: "lin.m.", price: 60 },
+            { itemNo: "13.1.7(xi)", desc: "Concrete Barrier, Transition Section including Foundation (any Type)", unit: "lin.m.", price: 60 },
+            { itemNo: "13.1.7(xii)a", desc: "Impact Attenuator (any Type) full system", unit: "nr.", price: 100 },
+            { itemNo: "13.1.7(xiv)a", desc: "Barrier Reflector Single Face (for any type of Guard Rail)", unit: "nr.", price: 6 },
+            { itemNo: "13.1.7(xiv)b", desc: "Barrier Reflector Double Face (for any type of Guard Rail)", unit: "nr.", price: 10 },
+            { itemNo: "13.1.7(xiv)c", desc: "Barrier Reflector Single Face (for any type of Concrete Barrier)", unit: "nr.", price: 6 },
+            { itemNo: "13.1.7(xiv)d", desc: "Barrier Reflector Double Face (for any type of Concrete Barrier)", unit: "nr.", price: 10 },
+            { itemNo: "13.2.7(i)", desc: "Providing and Installing, Chain Link Fence (for R.O.W. and Farms) as Existing", unit: "lin.m.", price: 9 },
+            { itemNo: "13.2.7(v)", desc: "Gate (as Existing)", unit: "sq.m.", price: 93 },
+            { itemNo: "13.3.5 (i)", desc: "Supply and installation of 4 cable steel wire rope barrier system (as Existing)", unit: "lin.m.", price: 40 },
+            { itemNo: "14.1.7(i)a", desc: "Highway sign, triangular (Side 600mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(i)b", desc: "Highway sign, triangular (Side 750mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(i)c", desc: "Highway sign, triangular (Side 900mm)", unit: "nr.", price: 40 },
+            { itemNo: "14.1.7(i)d", desc: "Highway sign, triangular (Side 1000mm)", unit: "nr.", price: 5 },
+            { itemNo: "14.1.7(i)e", desc: "Highway sign, triangular (Side 1200mm)", unit: "nr.", price: 50 },
+            { itemNo: "14.1.7(i)f", desc: "Highway sign, triangular (Side 1500mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(ii)a", desc: "Highway sign, circular (Dia. 600mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(ii)b", desc: "Highway sign, circular (Dia. 750mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(ii)c", desc: "Highway sign, circular (Dia. 900mm)", unit: "nr.", price: 40 },
+            { itemNo: "14.1.7(ii)d", desc: "Highway sign, circular (Dia. 1000mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(ii)e", desc: "Highway sign, circular (Dia. 1200mm)", unit: "nr.", price: 50 },
+            { itemNo: "14.1.7(ii)f", desc: "Highway sign, circular (Dia. 1500mm)", unit: "nr.", price: 4.7 },
+            { itemNo: "14.1.7(iii)a", desc: "Highway sign, rectangular size (finished sign area per sq.m)", unit: "sq.m.", price: 60 },
+            { itemNo: "14.1.7(iv)", desc: "Highway sign, octgagonal, (any Height)", unit: "nr.", price: 50 },
+            { itemNo: "14.1.7(v)a", desc: "Sign post support assembly including foundation and Painting, One GI pipe 75mm dia. (3\")", unit: "nr.", price: 60 },
+            { itemNo: "14.1.7(v)b", desc: "Sign post support assembly including foundation and Painting, One/Multi GI pipe 100mm dia.(4\")", unit: "nr.", price: 47 },
+            { itemNo: "14.1.7(v)c", desc: "Sign post support assembly including foundation and Painting, Two/Multi GI pipes 150mm dia. (6\")", unit: "nr.", price: 18 },
+            { itemNo: "14.1.7(v)d", desc: "Sign post support assembly including foundation and Painting, Two/Multi GI pipes 200mm dia.(8\")", unit: "nr.", price: 1 },
+            { itemNo: "14.1.7(vi)a", desc: "Breakaway Sign post support assembly including foundation and Painting, One/Multi GI pipes (any Diameter).", unit: "nr.", price: 9.5 },
+            { itemNo: "14.1.7(vi)b", desc: "Removal / Refixing of Breakaway Sign post support assembly including foundation and Painting, One/Multi GI pipes", unit: "nr.", price: 20 },
+            { itemNo: "14.1.7(vii)a", desc: "Overhead Sign Support (Cantilever) including Foundation (Single Post)", unit: "nr.", price: 4420 },
+            { itemNo: "14.1.7(vii)b", desc: "Overhead Sign Support (Gantry) including Foundation (Double Post)", unit: "nr.", price: 5580 },
+            { itemNo: "14.1.7(vii)c", desc: "Overhead Sign Support (Height Restriction Gantry) including Warning Chain and Foundation", unit: "nr.", price: 465 },
+            { itemNo: "14.1.7(vii)d", desc: "Overhead Sign (including Bracing Foundation and Catwalk Assembly of Cantilever) ( L shap fram) for single", unit: "nr.", price: 465 },
+            { itemNo: "14.1.7(vii)e", desc: "Overhead Sign (including Bracing Foundation and Catwalk Assembly of Gantry) (L shap fram) for double", unit: "nr.", price: 1400 },
+            { itemNo: "14.1.7 (viii)a", desc: "Marker post for floodways (as Existing)", unit: "nr.", price: 14 },
+            { itemNo: "14.1.7 (viii)b", desc: "Depth Marker post for floodways (water guage) (as Existing)", unit: "nr.", price: 9.3 },
+            { itemNo: "14.1.7(ix)a", desc: "Delineator Posts (Flat) including foundation (as Existing)", unit: "nr.", price: 9.3 },
+            { itemNo: "14.1.7(ix)b", desc: "Delinator Tubular Channelizer, any Type and any size", unit: "nr.", price: 9.3 },
+            { itemNo: "14.1.7(x)", desc: "Debris Deflector including Foundation", unit: "nr.", price: 13.9 },
+            { itemNo: "14.1.7(xi)", desc: "Bollards for Emergency Opening including Foundation, Chain and Lock (as Existing)", unit: "nr.", price: 9.3 },
+            { itemNo: "14.2.6(i)", desc: "Traffic Line (White/Yellow) ( type-2 thermoplastic) (Mechanical Application)", unit: "sq.m.", price: 5.3 },
+            { itemNo: "14.2.6 (iii)", desc: "Special markings (hand applied) type-2 thermoplastic", unit: "sq.m.", price: 12 },
+            { itemNo: "14.2.6 (iv)", desc: "Curb Painting (any Type)", unit: "sq.m.", price: 1.5 },
+            { itemNo: "14.2.6(v)", desc: "Removal of Existing Road Markings", unit: "sq.m.", price: 10 },
+            { itemNo: "14.3.6(i)a", desc: "Reflecting Road Studs (any color) Single Face", unit: "nr.", price: 4.2 },
+            { itemNo: "14.3.6(i)b", desc: "Reflecting Ceramic (Buttons) Road Studs (any color) Single Face", unit: "nr.", price: 5.2 },
+            { itemNo: "14.3.6(i)c", desc: "Reflecting Road Studs (any color) Double Face", unit: "nr.", price: 9 },
+            { itemNo: "14.3.6(i)d", desc: "Reflecting Ceramic (Buttons) Road Studs (any color) Double Face", unit: "nr.", price: 8.8 },
+            { itemNo: "14.3.6(ii)a", desc: "Non-Reflecting Road Studs", unit: "nr.", price: 3.7 },
+            { itemNo: "14.3.6(iii)", desc: "Solar Road Studs (any color and any type) As Existing", unit: "nr.", price: 9.5 },
+            { itemNo: "19.1 (i)", desc: "Provision for Unforeseen Utilities (relocation or protection works) for electrical lines, water lines, telephone, Falaj, etc,.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (ii)", desc: "Design of any works including Survey works and detailed designed drawings.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (iii)", desc: "Maintenance of Traffic signals with all accessories and programming as directed by Engineer and Concerned Authorities.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (iv)", desc: "Maintenance of Pumps at Underpasses Bridge (Vehicular/Pedestrian) with all accessories as directed by Engineer.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (v)", desc: "Provide and Install Street lighting Poles (as Existing) including cables, all accessories, Foundations as directed by Engineer.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (vi)", desc: "Maintenance of all type of Services lighting under bridges, underpasses and overpasses.", unit: "P.S", price: 0 }
+        ];
+
+        let map, markersGroup;
         let globalOrders = [];
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-msg').innerText = message;
             document.getElementById('toast-icon').className = isError ? "fa-solid fa-circle-xmark text-red-400 text-lg" : "fa-solid fa-circle-check text-emerald-400 text-lg";
-            
             toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3500);
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+        }
+
+        function calculateCompletionDate() {
+            const issueDateVal = document.getElementById('issueDate').value;
+            const durationVal = parseInt(document.getElementById('durationDays').value || 0);
+
+            if (issueDateVal && durationVal > 0) {
+                const issueDate = new Date(issueDateVal);
+                issueDate.setDate(issueDate.getDate() + durationVal);
+                const year = issueDate.getFullYear();
+                const month = String(issueDate.getMonth() + 1).padStart(2, '0');
+                const day = String(issueDate.getDate()).padStart(2, '0');
+                document.getElementById('targetCompletionDate').value = `${year}-${month}-${day}`;
+            } else {
+                document.getElementById('targetCompletionDate').value = '';
+            }
         }
 
         function initMap() {
             map = L.map('map').setView([24.25, 55.78], 11);
-
-            currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap | ROWADS Platform'
-            }).addTo(map);
-
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             markersGroup = L.layerGroup().addTo(map);
 
             map.on('click', function(e) {
-                const lat = e.latlng.lat.toFixed(5);
-                const lng = e.latlng.lng.toFixed(5);
-                openModalForCreate(lat, lng);
+                openModalForCreate(e.latlng.lat.toFixed(5), e.latlng.lng.toFixed(5));
             });
         }
 
-        function toggleMapTile() {
-            map.removeLayer(currentTileLayer);
-            if (isSatellite) {
-                currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                showToast('تم التغيير إلى الخريطة العادية');
-            } else {
-                currentTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
-                showToast('تم التغيير إلى عرض الأقمار الصناعية');
-            }
-            isSatellite = !isSatellite;
-        }
-
-        function locateUser() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    map.setView([lat, lng], 14);
-                    L.marker([lat, lng]).addTo(map).bindPopup('<b>موقعك الحالي</b>').openPopup();
-                    showToast('تم تحديد موقعك بنجاح');
-                }, () => showToast('تعذر الوصول إلى الموقع الجغرافي', true));
-            } else {
-                showToast('خاصية تحديد الموقع غير مدعومة في متصفحك', true);
-            }
-        }
-
-        function getCurrentLocationForModal() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    document.getElementById('lat').value = position.coords.latitude.toFixed(5);
-                    document.getElementById('lng').value = position.coords.longitude.toFixed(5);
-                    showToast('تم تعيين الإحداثيات الحالية بنجاح');
-                }, () => showToast('تعذر جلب الموقع الحالي', true));
-            }
-        }
-
-        // --- المزامنة اللحظية مع Firebase Firestore ---
         function setupFirebaseRealtime() {
             if (!window.firestoreTools) {
                 setTimeout(setupFirebaseRealtime, 200);
                 return;
             }
-
             const { collection, onSnapshot, query } = window.firestoreTools;
-            const ordersRef = collection(window.db, "orders");
-            const q = query(ordersRef);
-
-            onSnapshot(q, (snapshot) => {
+            onSnapshot(query(collection(window.db, "orders")), (snapshot) => {
                 globalOrders = [];
                 snapshot.forEach((docSnap) => {
                     globalOrders.push({ firestoreId: docSnap.id, ...docSnap.data() });
                 });
                 render();
-            }, (error) => {
-                console.error("Firebase Error: ", error);
-                showToast("حدث خطأ في الاتصال بـ Firebase", true);
             });
         }
 
-        function toggleModal() {
-            const modal = document.getElementById('modal');
-            const isHidden = modal.classList.toggle('hidden');
-            if (!isHidden) {
-                document.getElementById('code').focus();
-            }
+        function addBOQItemRow(itemNo = '', desc = '', unit = 'm²', qty = 1, unitPrice = 0) {
+            const tbody = document.getElementById('boq-items-body');
+            const rowId = Date.now() + Math.random().toString(36).substring(2, 5);
+            
+            let optionsHTML = `<option value="">-- اختر مادة من العقد (من أصل 181 بنداً) --</option>`;
+            contractBOQLibrary.forEach((item, idx) => {
+                const selected = (itemNo === item.itemNo) ? 'selected' : '';
+                optionsHTML += `<option value="${idx}" ${selected}>[${item.itemNo}] ${item.desc}</option>`;
+            });
+
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowId}`;
+            tr.className = "boq-row hover:bg-slate-50";
+            tr.innerHTML = `
+                <td class="p-1.5">
+                    <select onchange="autoFillBOQItem(this, 'row-${rowId}')" class="boq-select w-full border rounded p-1.5 text-xs font-bold bg-white focus:ring-2 focus:ring-blue-950">
+                        ${optionsHTML}
+                    </select>
+                    <input type="hidden" class="boq-no" value="${itemNo}">
+                    <input type="hidden" class="boq-desc" value="${desc}">
+                </td>
+                <td class="p-1.5">
+                    <input type="text" class="boq-unit w-full border rounded p-1.5 text-xs text-center font-bold bg-slate-50" value="${unit}">
+                </td>
+                <td class="p-1.5">
+                    <input type="number" step="any" min="0" oninput="calculateBOQTotals()" class="boq-qty w-full border rounded p-1.5 text-xs font-bold text-center" value="${qty}">
+                </td>
+                <td class="p-1.5">
+                    <input type="number" step="any" min="0" oninput="calculateBOQTotals()" class="boq-price w-full border rounded p-1.5 text-xs font-bold text-left" value="${unitPrice}">
+                </td>
+                <td class="p-1.5 font-bold text-slate-800 boq-item-total text-left p-2">0.000</td>
+                <td class="p-1.5 text-center">
+                    <button type="button" onclick="removeBOQRow('row-${rowId}')" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            calculateBOQTotals();
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('modal');
-                if (!modal.classList.contains('hidden')) {
-                    toggleModal();
-                }
+        function autoFillBOQItem(selectEl, rowId) {
+            const selectedIdx = selectEl.value;
+            const row = document.getElementById(rowId);
+            if (!row) return;
+
+            if (selectedIdx !== "") {
+                const selectedItem = contractBOQLibrary[selectedIdx];
+                row.querySelector('.boq-no').value = selectedItem.itemNo;
+                row.querySelector('.boq-desc').value = selectedItem.desc;
+                row.querySelector('.boq-unit').value = selectedItem.unit;
+                row.querySelector('.boq-price').value = selectedItem.price;
+            } else {
+                row.querySelector('.boq-no').value = '';
+                row.querySelector('.boq-desc').value = '';
+                row.querySelector('.boq-price').value = 0;
             }
-        });
+            calculateBOQTotals();
+        }
+
+        function removeBOQRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) row.remove();
+            calculateBOQTotals();
+        }
+
+        function calculateBOQTotals() {
+            let grandTotal = 0;
+            const rows = document.querySelectorAll('.boq-row');
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('.boq-qty').value || 0);
+                const price = parseFloat(row.querySelector('.boq-price').value || 0);
+                const total = qty * price;
+                row.querySelector('.boq-item-total').innerText = total.toFixed(3);
+                grandTotal += total;
+            });
+            document.getElementById('grand-total-display').innerText = grandTotal.toFixed(3) + ' ر.ع';
+            return grandTotal;
+        }
+
+        function getBOQItemsData() {
+            const items = [];
+            const rows = document.querySelectorAll('.boq-row');
+            rows.forEach(row => {
+                const itemNo = row.querySelector('.boq-no').value;
+                const desc = row.querySelector('.boq-desc').value;
+                const unit = row.querySelector('.boq-unit').value;
+                const qty = parseFloat(row.querySelector('.boq-qty').value || 0);
+                const unitPrice = parseFloat(row.querySelector('.boq-price').value || 0);
+                const total = qty * unitPrice;
+                if (desc.trim() !== '') {
+                    items.push({ itemNo, desc, unit, qty, unitPrice, total });
+                }
+            });
+            return items;
+        }
+
+        function toggleModal() {
+            document.getElementById('modal').classList.toggle('hidden');
+        }
 
         function openModalForCreate(lat = 24.25, lng = 55.78) {
             document.getElementById('edit-id').value = '';
-            document.getElementById('modal-title').innerText = 'إنشاء أمر عمل جديد';
+            document.getElementById('modal-title').innerText = 'إنشاء أمر عمل جديد وحصر مواد العقد';
             document.getElementById('order-form').reset();
+            document.getElementById('boq-items-body').innerHTML = '';
             
             const nextNum = globalOrders.length > 0 ? Math.max(...globalOrders.map(o => o.numId || 100)) + 1 : 101;
             document.getElementById('code').value = `WO-2026-${nextNum}`;
-            
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
 
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('issueDate').value = today;
+            document.getElementById('durationDays').value = 30;
+            calculateCompletionDate();
+
+            addBOQItemRow();
             toggleModal();
         }
 
@@ -438,17 +721,23 @@
             document.getElementById('edit-id').value = o.firestoreId;
             document.getElementById('modal-title').innerText = `تعديل أمر العمل (${o.code})`;
             document.getElementById('code').value = o.code;
-            document.getElementById('title').value = o.title;
-            document.getElementById('type').value = o.type;
             document.getElementById('wilayat').value = o.wilayat;
             document.getElementById('region').value = o.region || '';
+            document.getElementById('issueDate').value = o.issueDate || new Date().toISOString().split('T')[0];
+            document.getElementById('durationDays').value = o.durationDays || 30;
+            document.getElementById('targetCompletionDate').value = o.targetCompletionDate || '';
             document.getElementById('contractor').value = o.contractor || '';
-            document.getElementById('cost').value = o.cost;
             document.getElementById('priority').value = o.priority;
             document.getElementById('status').value = o.status;
-
             document.getElementById('lat').value = o.lat || 24.25;
             document.getElementById('lng').value = o.lng || 55.78;
+
+            document.getElementById('boq-items-body').innerHTML = '';
+            if (o.items && o.items.length > 0) {
+                o.items.forEach(item => addBOQItemRow(item.itemNo, item.desc, item.unit, item.qty, item.unitPrice));
+            } else {
+                addBOQItemRow();
+            }
 
             toggleModal();
         }
@@ -460,178 +749,143 @@
 
             const codeStr = document.getElementById('code').value.trim();
             const numId = parseInt(codeStr.replace(/\D/g, '')) || Date.now();
+            const items = getBOQItemsData();
+            const grandTotal = calculateBOQTotals();
 
             const payload = {
                 code: codeStr,
                 numId: numId,
-                title: document.getElementById('title').value,
-                type: document.getElementById('type').value,
                 wilayat: document.getElementById('wilayat').value,
                 region: document.getElementById('region').value,
+                issueDate: document.getElementById('issueDate').value,
+                durationDays: parseInt(document.getElementById('durationDays').value || 0),
+                targetCompletionDate: document.getElementById('targetCompletionDate').value,
                 contractor: document.getElementById('contractor').value,
-                cost: parseFloat(document.getElementById('cost').value || 0),
                 priority: document.getElementById('priority').value,
                 status: document.getElementById('status').value,
                 lat: parseFloat(document.getElementById('lat').value),
                 lng: parseFloat(document.getElementById('lng').value),
+                items: items,
+                cost: grandTotal,
                 updatedAt: new Date().toISOString()
             };
 
             try {
                 if (editId) {
-                    const docRef = doc(window.db, "orders", editId);
-                    await updateDoc(docRef, payload);
-                    showToast('تم تعديل البيانات في Firebase بنجاح');
+                    await updateDoc(doc(window.db, "orders", editId), payload);
+                    showToast('تم تعديل أمر العمل والبنود بنجاح');
                 } else {
                     payload.createdAt = new Date().toISOString();
                     await addDoc(collection(window.db, "orders"), payload);
-                    showToast('تم إضافة أمر العمل إلى Firebase بنجاح');
+                    showToast('تم إضافة أمر العمل وتكاليف البنود بنجاح');
                 }
                 toggleModal();
             } catch (err) {
                 console.error(err);
-                showToast('فشل حفظ البيانات في Firebase', true);
+                showToast('حدث خطأ أثناء التخزين في Firebase', true);
             }
         }
 
-        async function quickChangeStatus(firestoreId, newStatus) {
-            const { doc, updateDoc } = window.firestoreTools;
-            try {
-                const docRef = doc(window.db, "orders", firestoreId);
-                await updateDoc(docRef, { status: newStatus });
-                showToast('تم تحديث حالة العمل بنجاح');
-            } catch (err) {
-                showToast('فشل تحديث الحالة', true);
+        function generatePDF(firestoreId) {
+            const o = globalOrders.find(item => item.firestoreId === firestoreId);
+            if (!o) return;
+
+            document.getElementById('pdf-code').innerText = o.code;
+            document.getElementById('pdf-location').innerText = `${o.wilayat} (${o.region || ''})`;
+            document.getElementById('pdf-issue-date').innerText = o.issueDate || '---';
+            document.getElementById('pdf-duration').innerText = o.durationDays || '---';
+            document.getElementById('pdf-target-date').innerText = o.targetCompletionDate || '---';
+            document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
+
+            const pdfTbody = document.getElementById('pdf-items-body');
+            pdfTbody.innerHTML = '';
+            if (o.items && o.items.length > 0) {
+                o.items.forEach((item) => {
+                    pdfTbody.innerHTML += `
+                        <tr class="border-b border-slate-900">
+                            <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo || '-'}</td>
+                            <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
+                            <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
+                            <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice || 0).toFixed(3)}</td>
+                            <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty || 0).toFixed(4)}</td>
+                            <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total || 0).toFixed(3)}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                pdfTbody.innerHTML = `<tr><td colspan="6" class="border border-slate-900 p-3 text-center">No detailed items recorded.</td></tr>`;
             }
+
+            const element = document.getElementById('pdf-template');
+            element.classList.remove('hidden');
+
+            const opt = {
+                margin:       [8, 8, 8, 8],
+                filename:     `WorkOrder_${o.code}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.add('hidden');
+                showToast('تم استخراج وثيقة أمر العمل PDF بالترويسة الرسمية بنجاح');
+            });
         }
 
         async function deleteOrder(firestoreId) {
-            if(confirm('هل أنت متأكد من حذف أمر العمل هذا نهائياً من قاعدة بيانات Firebase؟')) {
+            if(confirm('هل أنت متأكد من حذف أمر العمل هذا؟')) {
                 const { doc, deleteDoc } = window.firestoreTools;
-                try {
-                    await deleteDoc(doc(window.db, "orders", firestoreId));
-                    showToast('تم حذف أمر العمل بنجاح', true);
-                } catch (err) {
-                    showToast('فشل حذف أمر العمل', true);
-                }
+                await deleteDoc(doc(window.db, "orders", firestoreId));
+                showToast('تم حذف أمر العمل', true);
             }
         }
 
-        function exportData() {
-            const cleanOrders = globalOrders.map(({ firestoreId, ...rest }) => rest);
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanOrders, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `ROWADS_Firebase_Data_${new Date().toISOString().slice(0,10)}.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-            showToast('تم تصدير نسخة البيانات');
-        }
-
-        async function importData(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(evt) {
-                try {
-                    const imported = JSON.parse(evt.target.result);
-                    if (Array.isArray(imported)) {
-                        const { collection, addDoc } = window.firestoreTools;
-                        for (const item of imported) {
-                            await addDoc(collection(window.db, "orders"), item);
-                        }
-                        showToast('تم استيراد ورفع البيانات إلى Firebase بنجاح');
-                    }
-                } catch (err) {
-                    showToast('خطأ في صيغة الملف المستورد', true);
-                }
-            };
-            reader.readAsText(file);
-        }
-
         function render() {
-            const searchVal = document.getElementById('search-input')?.value.toLowerCase() || '';
-            const filterWilayat = document.getElementById('filter-wilayat')?.value || '';
-            const filterStatus = document.getElementById('filter-status')?.value || '';
-            const filterPriority = document.getElementById('filter-priority')?.value || '';
-
-            const orders = globalOrders.filter(o => {
-                const matchesSearch = (o.title && o.title.toLowerCase().includes(searchVal)) || 
-                                     (o.code && o.code.toLowerCase().includes(searchVal)) || 
-                                     (o.contractor && o.contractor.toLowerCase().includes(searchVal));
-                const matchesWilayat = !filterWilayat || o.wilayat === filterWilayat;
-                const matchesStatus = !filterStatus || o.status === filterStatus;
-                const matchesPriority = !filterPriority || (o.priority && o.priority.includes(filterPriority));
-
-                return matchesSearch && matchesWilayat && matchesStatus && matchesPriority;
-            });
-
             document.getElementById('stat-total').innerText = globalOrders.length;
-            document.getElementById('stat-open').innerText = globalOrders.filter(o => o.status !== 'مغلق').length;
-            document.getElementById('stat-closed').innerText = globalOrders.filter(o => o.status === 'مغلق').length;
-            document.getElementById('stat-cost').innerText = globalOrders.reduce((acc, r) => acc + Number(r.cost || 0), 0).toLocaleString() + ' ر.ع';
-            document.getElementById('orders-count').innerText = orders.length + ' عناصر معروضة';
+            document.getElementById('stat-open').innerText = globalOrders.filter(o => o.status !== 'Closed').length;
+            document.getElementById('stat-closed').innerText = globalOrders.filter(o => o.status === 'Closed').length;
+            document.getElementById('stat-cost').innerText = globalOrders.reduce((acc, r) => acc + Number(r.cost || 0), 0).toFixed(3) + ' ر.ع';
+            document.getElementById('orders-count').innerText = globalOrders.length + ' عناصر معروضة';
 
             if (markersGroup) {
                 markersGroup.clearLayers();
-                orders.forEach(o => {
+                globalOrders.forEach(o => {
                     if (o.lat && o.lng) {
-                        const color = o.status === 'مغلق' ? '#10b981' : (o.status === 'قيد التنفيذ' ? '#f59e0b' : '#ef4444');
                         const marker = L.circleMarker([o.lat, o.lng], {
                             radius: 8,
-                            fillColor: color,
+                            fillColor: o.status === 'Closed' ? '#10b981' : '#f59e0b',
                             color: '#fff',
                             weight: 2,
                             fillOpacity: 0.9
                         }).addTo(markersGroup);
 
-                        marker.bindPopup(`
-                            <div style="direction: rtl; font-family: 'Tajawal', sans-serif; text-align: right;">
-                                <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 4px;"><b>${o.code}</b></span><br>
-                                <b style="font-size: 13px;">${o.title}</b><br>
-                                <span style="font-size: 12px; color: #555;">الولاية: ${o.wilayat} (${o.region || ''})</span><br>
-                                الإحداثيات: <code style="font-size:11px; font-family: monospace;">${o.lat}, ${o.lng}</code><br>
-                                حالة العمل: <b>${o.status}</b> | التكلفة: <b>${o.cost} ر.ع</b>
-                            </div>
-                        `);
+                        marker.bindPopup(`<b>${o.code}</b><br>${o.wilayat} (${o.region || ''})<br>التكلفة: ${(o.cost || 0).toFixed(3)} ر.ع`);
                     }
                 });
             }
 
             const tbody = document.getElementById('orders-table');
-            if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500 font-bold">لا توجد نتائج مطابقة لخيارات البحث أو الفلترة.</td></tr>`;
+            if (globalOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-8 text-center text-slate-500 font-bold">لا توجد أوامر عمل مسجلة.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = orders.map(o => `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            tbody.innerHTML = globalOrders.map(o => `
+                <tr class="hover:bg-slate-50 transition border-b">
                     <td class="p-3 font-bold text-blue-950">${o.code}</td>
-                    <td class="p-3 font-semibold text-slate-900">${o.title}</td>
-                    <td class="p-3">${o.wilayat} <span class="text-xs text-slate-500 block font-normal">${o.region || ''}</span></td>
-                    <td class="p-3 text-xs">${o.type}</td>
+                    <td class="p-3">${o.wilayat} <span class="text-xs text-slate-500 block">${o.region || ''}</span></td>
+                    <td class="p-3 text-xs font-mono">${o.issueDate || '---'}</td>
+                    <td class="p-3 font-bold text-center">${o.durationDays || '---'}</td>
+                    <td class="p-3 text-xs font-mono font-bold text-blue-950">${o.targetCompletionDate || '---'}</td>
                     <td class="p-3 text-xs text-slate-700">${o.contractor || 'غير محدد'}</td>
-                    <td class="p-3 font-bold text-slate-800">${o.cost} ر.ع</td>
-                    <td class="p-3">
-                        <span class="px-2.5 py-1 rounded-md text-xs font-bold ${o.priority && o.priority.includes('عالية') ? 'bg-red-100 text-red-800' : (o.priority === 'متوسطة' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')}">
-                            ${o.priority || 'عادية'}
-                        </span>
-                    </td>
-                    <td class="p-3">
-                        <label for="status-select-${o.firestoreId}" class="sr-only">تغيير حالة أمر العمل ${o.code}</label>
-                        <select id="status-select-${o.firestoreId}" onchange="quickChangeStatus('${o.firestoreId}', this.value)" class="text-xs p-1.5 rounded-lg font-bold border ${o.status === 'مغلق' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (o.status === 'قيد التنفيذ' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-blue-50 text-blue-800 border-blue-300')}">
-                            <option value="مفتوح" ${o.status === 'مفتوح' ? 'selected' : ''}>مفتوح</option>
-                            <option value="قيد التنفيذ" ${o.status === 'قيد التنفيذ' ? 'selected' : ''}>قيد التنفيذ</option>
-                            <option value="معلق" ${o.status === 'معلق' ? 'selected' : ''}>معلق</option>
-                            <option value="مغلق" ${o.status === 'مغلق' ? 'selected' : ''}>مغلق (مكتمل)</option>
-                        </select>
-                    </td>
-                    <td class="p-3 text-center space-x-1 space-x-reverse no-print">
-                        <button onclick="window.print()" aria-label="طباعة ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="طباعة"><i class="fa-solid fa-print" aria-hidden="true"></i></button>
-                        <button onclick="openModalForEdit('${o.firestoreId}')" aria-label="تعديل ${o.code}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-2 rounded-lg transition" title="تعديل"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></button>
-                        <button onclick="deleteOrder('${o.firestoreId}')" aria-label="حذف ${o.code}" class="text-xs bg-slate-100 hover:bg-red-100 hover:text-red-700 text-slate-700 p-2 rounded-lg transition" title="حذف"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                    <td class="p-3 font-bold text-center"><span class="bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full text-xs">${o.items ? o.items.length : 0} بنود</span></td>
+                    <td class="p-3 font-black text-slate-900">${(o.cost || 0).toFixed(3)} ر.ع</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${o.status === 'Closed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.status}</span></td>
+                    <td class="p-3 text-center space-x-1 space-x-reverse">
+                        <button onclick="generatePDF('${o.firestoreId}')" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded shadow transition" title="استخراج PDF"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                        <button onclick="openModalForEdit('${o.firestoreId}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 p-1.5 rounded transition" title="تعديل"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteOrder('${o.firestoreId}')" class="text-xs bg-slate-100 hover:bg-red-100 text-red-700 p-1.5 rounded transition" title="حذف"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('');
