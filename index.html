@@ -375,7 +375,7 @@
     </div>
 
     <script>
-        // وحدات القياس الهندسية العالمية الدقيقة
+        // بنود العقد الهندسية الكاملة (181 بنداً معتاداً ومحدثاً حسب المواصفات القياسية)
         const contractBOQLibrary = [
             { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
             { itemNo: "1.4.3(i)", desc: "Mobilization and demobilization of Contractor's site facilities", unit: "l.s.", price: 42500 },
@@ -560,7 +560,7 @@
             render();
         }
 
-        // تسجيل الدخول الآمن عبر Firebase Auth وجلب الصلاحية من Firestore
+        // تسجيل الدخول الآمن عبر Firebase Auth ودعم دور manager/director
         async function handleSecureLogin() {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
@@ -579,7 +579,7 @@
                 const userSnap = await getDoc(userDocRef);
 
                 if (userSnap.exists()) {
-                    currentUser = userSnap.data(); // جلب الصلاحية المحددة بالاسم والدور حصراً
+                    currentUser = userSnap.data(); 
                     localStorage.setItem('rowads_auth_user', JSON.stringify(currentUser));
                     applyRolePermissions();
                     document.getElementById('login-modal').classList.add('hidden');
@@ -602,13 +602,15 @@
 
         function applyRolePermissions() {
             const roleNames = { 
-                ar: { employee: 'موظف', head: 'رئيس القسم', director: 'مدير الدائرة' },
-                en: { employee: 'Employee', head: 'Head Section', director: 'Director' }
+                ar: { employee: 'موظف', head: 'رئيس القسم', director: 'مدير الدائرة', manager: 'مدير الدائرة' },
+                en: { employee: 'Employee', head: 'Head Section', director: 'Director', manager: 'Director' }
             };
-            document.getElementById('current-user-display').innerText = `${currentUser.name} (${roleNames[currentLang][currentUser.role]})`;
+            const activeRole = currentUser.role || 'employee';
+            const roleDisplay = (roleNames[currentLang] && roleNames[currentLang][activeRole]) ? roleNames[currentLang][activeRole] : activeRole;
+            document.getElementById('current-user-display').innerText = `${currentUser.name} (${roleDisplay})`;
             
             const btnCreate = document.getElementById('btn-create');
-            if (currentUser.role === 'employee') {
+            if (activeRole === 'employee') {
                 btnCreate.style.display = 'flex';
             } else {
                 btnCreate.style.display = 'none';
@@ -826,7 +828,7 @@
                 sigs.projectEngineer = true;
                 sigs.headSection = true;
             } else if (nextStage.includes('Approved') || nextStage.includes('معتمد نهائياً')) {
-                if (currentUser.role !== 'director') { showToast('Director privilege required', true); return; }
+                if (currentUser.role !== 'director' && currentUser.role !== 'manager') { showToast('Director privilege required', true); return; }
                 sigs.director = true;
             }
 
@@ -871,7 +873,7 @@
         }
 
         async function deleteOrder(firestoreId) {
-            if (currentUser.role !== 'employee' && currentUser.role !== 'director') {
+            if (currentUser.role !== 'employee' && currentUser.role !== 'director' && currentUser.role !== 'manager') {
                 showToast(currentLang === 'ar' ? 'الصلاحية غير متاحة للحذف' : 'Permission denied for deletion', true); return;
             }
             if (confirm(currentLang === 'ar' ? 'هل أنت متأكد من حذف أمر العمل هذا؟' : 'Are you sure you want to delete this work order?')) {
@@ -916,21 +918,21 @@
                         const targetStage = currentLang === 'ar' ? 'مراجعة المدير' : 'Director Review';
                         approvalButtons = `<button onclick="advanceApproval('${o.firestoreId}', '${targetStage}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow">${nextTxt}</button>`;
                     } else {
-                        approvalButtons = `<span class="text-xs text-amber-600 font-bold">${currentLang==='ar'?'بانتظار اعتماد رئيس القسم':'Pending Head Section'}</span>`;
+                        approvalButtons = `<span class="text-xs text-amber-600 font-bold">${currentLang === 'ar' ? 'بانتظار اعتماد رئيس القسم' : 'Pending Head Section'}</span>`;
                     }
                 } else if (stageStr.includes('المدير') || stageStr.includes('Director')) {
-                    if (currentUser.role === 'director') {
+                    if (currentUser.role === 'director' || currentUser.role === 'manager') {
                         const nextTxt = currentLang === 'ar' ? 'الاعتماد النهائي والتوقيع' : 'Director Final Sign';
                         const targetStage = currentLang === 'ar' ? 'معتمد نهائياً' : 'Fully Approved';
                         approvalButtons = `<button onclick="advanceApproval('${o.firestoreId}', '${targetStage}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow">${nextTxt}</button>`;
                     } else {
-                        approvalButtons = `<span class="text-xs text-blue-600 font-bold">${currentLang==='ar'?'بانتظار اعتماد المدير':'Pending Director'}</span>`;
+                        approvalButtons = `<span class="text-xs text-blue-600 font-bold">${currentLang === 'ar' ? 'بانتظار اعتماد المدير' : 'Pending Director'}</span>`;
                     }
                 } else if (stageStr.includes('معتمد نهائياً') || stageStr.includes('Fully Approved')) {
                     const printTxt = currentLang === 'ar' ? 'طباعة الوثيقة الموقعة' : 'Print Signed PDF';
                     approvalButtons = `<button onclick="generatePDF('${o.firestoreId}')" class="bg-purple-700 hover:bg-purple-800 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-file-pdf"></i> ${printTxt}</button>`;
                 } else {
-                    approvalButtons = `<span class="text-xs text-slate-500">${currentLang==='ar'?'بانتظار المسار':'Draft Created'}</span>`;
+                    approvalButtons = `<span class="text-xs text-slate-500">${stageStr}</span>`;
                 }
 
                 return `
@@ -959,7 +961,6 @@
             initMap(); 
             setupFirebaseRealtime();
 
-            // فحص حالة المصادقة النشطة حالياً عبر Firebase Auth
             setTimeout(() => {
                 window.auth.onAuthStateChanged(async (user) => {
                     if (user) {
