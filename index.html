@@ -284,8 +284,8 @@
         </div>
     </div>
 
-    <!-- Official Printable  Template -->
-    <div id="-template" dir="ltr" class="hidden bg-white p-8 max-w-3xl mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+    <!-- Official Printable PDF Template -->
+    <div id="pdf-template" dir="ltr" class="hidden bg-white p-8 max-w-3xl mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
         <div class="text-center text-[11px] font-bold text-purple-800 mb-1" style="font-family: 'Amiri', serif;">بسم الله الرحمن الرحيم</div>
         <div class="flex justify-between items-center border-b pb-4 mb-4">
             <div class="text-left font-serif text-[11px] text-purple-900 leading-snug w-1/3">
@@ -317,15 +317,15 @@
 
         <div class="grid grid-cols-12 gap-y-1 text-[11px] font-bold mb-4 border-t border-b py-2 text-slate-900 text-left">
             <div class="col-span-4 uppercase">WORK ORDER NO</div>
-            <div class="col-span-8 font-black text-blue-950" id="-code">---</div>
+            <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
             <div class="col-span-4 uppercase">DATE OF ISSUE</div>
-            <div class="col-span-8" id="-issue-date">---</div>
+            <div class="col-span-8" id="pdf-issue-date">---</div>
             <div class="col-span-4 uppercase">PERIOD</div>
-            <div class="col-span-8" id="-duration">---</div>
+            <div class="col-span-8" id="pdf-duration">---</div>
             <div class="col-span-4 uppercase">DATE OF COMP</div>
-            <div class="col-span-8" id="-target-date">---</div>
+            <div class="col-span-8" id="pdf-target-date">---</div>
             <div class="col-span-4 uppercase">LOCATION</div>
-            <div class="col-span-8" id="-location">---</div>
+            <div class="col-span-8" id="pdf-location">---</div>
         </div>
 
         <p class="font-bold text-[11px] mb-2 text-left">List of work as per the Work Order No.</p>
@@ -341,11 +341,11 @@
                     <th class="border border-slate-900 p-1.5 w-24 text-center">Amount (R.O.)</th>
                 </tr>
             </thead>
-            <tbody id="-items-body" class="divide-y divide-slate-900"></tbody>
+            <tbody id="pdf-items-body" class="divide-y divide-slate-900"></tbody>
             <tfoot>
                 <tr class="font-black border-t border-slate-900">
                     <td colspan="5" class="border border-slate-900 p-1.5 text-right uppercase">Total cost of the maintenance order (R.O)</td>
-                    <td class="border border-slate-900 p-1.5 text-center text-slate-950 font-black text-[11px]" id="-grand-total">0.000</td>
+                    <td class="border border-slate-900 p-1.5 text-center text-slate-950 font-black text-[11px]" id="pdf-grand-total">0.000</td>
                 </tr>
             </tfoot>
         </table>
@@ -834,7 +834,7 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-        function generate(firestoreId) {
+        function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
@@ -846,19 +846,9 @@
             document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
 
             const sigs = o.signatures || {};
-            
-            // عرض صورة التوقيع بجانب الحالة لكل مسؤول وظيفي
-            document.getElementById('sig-eng').innerHTML = sigs.projectEngineer 
-                ? `<img src="https://example.com/signatures/engineer.png" class="h-10 mx-auto my-1 object-contain" alt="Engineer Signature"><span class="text-emerald-700 text-[10px] font-bold">✔ Approved (Project Engineer)</span>` 
-                : `<span class="text-slate-500 text-[10px] font-normal">Status: Pending</span>`;
-
-            document.getElementById('sig-head').innerHTML = sigs.headSection 
-                ? `<img src="https://example.com/signatures/head.png" class="h-10 mx-auto my-1 object-contain" alt="Head Signature"><span class="text-emerald-700 text-[10px] font-bold">✔ Approved (Head Section)</span>` 
-                : `<span class="text-slate-500 text-[10px] font-normal">Status: Pending</span>`;
-
-            document.getElementById('sig-director').innerHTML = sigs.director 
-                ? `<img src="https://example.com/signatures/director.png" class="h-12 mx-auto my-1 object-contain" alt="Director Signature"><span class="text-emerald-700 text-[10px] font-bold">✔ Approved & Signed (Director)</span>` 
-                : `<span class="text-slate-500 text-[10px] font-normal">Status: Pending</span>`;
+            document.getElementById('sig-eng').innerText = sigs.projectEngineer ? "✔ Approved (Project Engineer)" : "Status: Pending";
+            document.getElementById('sig-head').innerText = sigs.headSection ? "✔ Approved (Head Section)" : "Status: Pending";
+            document.getElementById('sig-director').innerText = sigs.director ? "✔ Approved & Signed (Director of Roads)" : "Status: Pending";
 
             const pdfTbody = document.getElementById('pdf-items-body');
             pdfTbody.innerHTML = o.items.map(item => `
