@@ -834,7 +834,7 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-      function generatePDF(firestoreId) {
+        function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
@@ -870,13 +870,6 @@
             });
         }
 
-            const element = document.getElementById('pdf-template');
-            element.classList.remove('hidden');
-            html2pdf().set({ margin: [8, 8, 8, 8], filename: `WorkOrder_${o.code}.pdf`, html2canvas: { scale: 2 } }).from(element).save().then(() => {
-                element.classList.add('hidden');
-                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
-            });
-        }
         async function deleteOrder(firestoreId) {
             if (currentUser.role !== 'employee' && currentUser.role !== 'director') {
                 showToast(currentLang === 'ar' ? 'الصلاحية غير متاحة للحذف' : 'Permission denied for deletion', true); return;
