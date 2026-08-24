@@ -1,300 +1,980 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة إدارة أوامر العمل - دائرة الطرق بمحافظة البريمي</title>
-    <!-- Bootstrap 5 CSS RTL -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css.rtl.min.css">
-    <!-- Font Awesome -->
+    <title>منصة ROWADS - نظام إدارة العمليات الطرقية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- jsPDF & AutoTable -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar { background-color: #1b4d3e; }
-        .card { border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .btn-primary { background-color: #1b4d3e; border-color: #1b4d3e; }
-        .btn-primary:hover { background-color: #14382d; border-color: #14382d; }
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- html2pdf Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Firebase SDK (Auth & Firestore) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { 
+            getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc 
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmaKM1rqHoA3EDSBs0YncKXpRmzGri1SQ",
+            authDomain: "rowads-48a34.firebaseapp.com",
+            projectId: "rowads-48a34",
+            storageBucket: "rowads-48a34.firebasestorage.app",
+            messagingSenderId: "1078921480693",
+            appId: "1:1078921480693:web:33026781b07437992ef8bc",
+            measurementId: "G-0YFRB68F19"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        window.db = db;
+        window.auth = auth;
+        window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc, signInWithEmailAndPassword, signOut };
+    </script>
+
+    <style> 
+        body { font-family: 'Tajawal', sans-serif; }
+        #map { height: 350px; width: 100%; z-index: 1; }
+        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-dark navbar-expand-lg mb-4">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-road ms-2"></i> دائرة الطرق بمحافظة البريمي | نظام أوامر العمل
-            </a>
-            <div class="d-flex align-items-center">
-                <button class="btn btn-outline-light btn-sm" onclick="toggleLanguage()">
-                    <i class="fas fa-globe ms-1"></i> <span id="langBtnText">English</span>
-                </button>
+    <!-- Login Modal (Secure Firebase Auth) -->
+    <div id="login-modal" class="fixed inset-0 bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 space-y-6 shadow-2xl text-center">
+            <div class="space-y-2">
+                <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
+                <h2 id="l-title" class="text-xl font-black text-blue-950">تسجيل الدخول المؤسسي الآمن</h2>
+                <p id="l-desc" class="text-xs text-slate-500">أدخل بيانات الاعتماد الرسمية الخاصة بك</p>
             </div>
-        </div>
-    </nav>
-
-    <div class="container mb-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="card p-4">
-                    <h3 class="mb-4 text-center text-success" id="formTitle">إنشاء أمر عمل جديد</h3>
-                    
-                    <form id="workOrderForm">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label" id="lblOrderNo">رقم أمر العمل</label>
-                                <input type="text" class="form-control" id="orderNo" value="WO-2026-001" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" id="lblDate">التاريخ</label>
-                                <input type="date" class="form-control" id="orderDate" required>
-                            </div>
-                        </div>
-
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label" id="lblContractor">المقاول المنفذ</label>
-                                <input type="text" class="form-control" id="contractorName" value="شركة النفائى للتجارة والمقاولات" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" id="lblLocation">موقع العمل</label>
-                                <input type="text" class="form-control" id="workLocation" value="ولاية البريمي - الطريق الرئيسي" required>
-                            </div>
-                        </div>
-
-                        <hr>
-                        <h4 class="mb-3 text-secondary" id="sectionItemsTitle">بنود الأعمال (من قائمة العقد الشاملة - 181 بنداً)</h4>
-                        
-                        <div class="table-responsive mb-3">
-                            <table class="table table-bordered align-middle" id="itemsTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 5%;">#</th>
-                                        <th style="width: 45%;" id="thItemDesc">اختر البند</th>
-                                        <th style="width: 15%;" id="thUnit">الوحدة</th>
-                                        <th style="width: 15%;" id="thQty">الكمية</th>
-                                        <th style="width: 15%;" id="thRate">السعر (ر.ع)</th>
-                                        <th style="width: 5%;">إزالة</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="itemsTableBody">
-                                    <!-- Rows added dynamically -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <button type="button" class="btn btn-secondary btn-sm mb-4" onclick="addItemRow()">
-                            <i class="fas fa-plus ms-1"></i> <span id="btnAddItem">إضافة بند جديد</span>
-                        </button>
-
-                        <div class="card bg-light p-3 mb-4">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold" id="lblApprover">حالة الاعتماد والموافقات</label>
-                                <select class="form-select" id="approvalStatus">
-                                    <option value="pending">قيد المراجعة (Pending Review)</option>
-                                    <option value="checked">تم التدقيق الفني (Checked by Engineer)</option>
-                                    <option value="approved" selected>معتمد نهائياً من المدير (Approved by Director)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="fas fa-file-pdf ms-2"></i> <span id="btnGeneratePDF">اعتماد واستخراج تقرير الـ PDF</span>
-                            </button>
-                        </div>
-                    </form>
+            <div class="space-y-3 text-right" id="login-form-div">
+                <div>
+                    <label id="l-lbl-email" class="text-xs font-bold text-slate-700 block mb-1">البريد الإلكتروني:</label>
+                    <input type="email" id="login-email" class="w-full border p-2.5 rounded-lg text-sm bg-slate-50 font-bold ltr" placeholder="user@rowads.om">
+                </div>
+                <div>
+                    <label id="l-lbl-pass" class="text-xs font-bold text-slate-700 block mb-1">كلمة المرور:</label>
+                    <input type="password" id="login-password" class="w-full border p-2.5 rounded-lg text-sm bg-slate-50 font-bold" placeholder="••••••••">
                 </div>
             </div>
+            <button onclick="handleSecureLogin()" id="l-btn" class="w-full py-3 bg-blue-950 hover:bg-blue-900 text-white font-black rounded-xl text-sm shadow-lg transition">
+                دخول للنظام <i class="fa-solid fa-arrow-left-long mr-2"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 left-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-msg" class="text-xs md:text-sm font-bold">تم إتمام العملية بنجاح</span>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40 no-print">
+        <div class="flex items-center gap-3">
+            <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
+            <div>
+                <h1 id="h-title" class="text-base md:text-lg font-bold">نظام إدارة العمليات الطرقية (ROWADS)</h1>
+                <p id="h-subtitle" class="text-xs text-slate-300">مديرية الطرق بمحافظة البريمي</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Language Switcher Toggle -->
+            <button onclick="toggleLanguage()" class="bg-blue-900 hover:bg-blue-800 border border-blue-700 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2" title="Switch Language / تبديل اللغة">
+                <i class="fa-solid fa-globe"></i> <span id="lang-btn-text">English</span>
+            </button>
+            <div id="user-badge" class="bg-blue-900 border border-blue-800 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 font-bold">
+                <i class="fa-solid fa-user-shield text-amber-400"></i>
+                <span id="current-user-display">---</span>
+            </div>
+            <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition" title="خروج">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+            <button id="btn-create" onclick="openModalForCreate()" class="bg-amber-500 hover:bg-amber-400 text-blue-950 font-black px-4 py-2 rounded-lg text-xs md:text-sm shadow transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> <span id="txt-create-btn">إنشاء أمر عمل جديد</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto mt-6 px-4 space-y-6 no-print">
+        <!-- Stats -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p id="st-total-lbl" class="text-xs text-slate-600 font-bold">إجمالي أوامر العمل</p>
+                <h2 id="stat-total" class="text-2xl md:text-3xl font-black text-blue-950 mt-1">0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p id="st-open-lbl" class="text-xs text-slate-600 font-bold">مفتوح / قيد التنفيذ</p>
+                <h2 id="stat-open" class="text-2xl md:text-3xl font-black text-amber-600 mt-1">0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p id="st-closed-lbl" class="text-xs text-slate-600 font-bold">مغلق / مكتمل</p>
+                <h2 id="stat-closed" class="text-2xl md:text-3xl font-black text-emerald-600 mt-1">0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-xl border shadow-sm">
+                <p id="st-cost-lbl" class="text-xs text-slate-600 font-bold">إجمالي التكلفة التقديرية</p>
+                <h2 id="stat-cost" class="text-2xl md:text-3xl font-black text-slate-800 mt-1">0.000 ر.ع</h2>
+            </div>
+        </section>
+
+        <!-- Map -->
+        <section class="bg-white rounded-xl border shadow-sm p-4">
+            <h2 id="map-title" class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-map-location-dot text-amber-500"></i> خريطة مواقع العمل
+            </h2>
+            <div id="map" class="rounded-lg border"></div>
+        </section>
+
+        <!-- Table -->
+        <section class="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div class="p-4 border-b bg-slate-50 font-bold text-slate-800 flex justify-between items-center">
+                <span id="table-title">سجل أوامر العمل ومسار الموافقات المؤسسية</span>
+                <span id="orders-count" class="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-bold">جاري التحميل...</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs md:text-sm" id="main-table-el">
+                    <thead class="bg-slate-100 text-slate-700 border-b">
+                        <tr>
+                            <th class="p-3" id="th-code">رمز الأمر</th>
+                            <th class="p-3" id="th-loc">الولاية والمنطقة</th>
+                            <th class="p-3" id="th-by">أنشئ بواسطة</th>
+                            <th class="p-3" id="th-cost">التكلفة الإجمالية</th>
+                            <th class="p-3" id="th-status">حالة العمل</th>
+                            <th class="p-3" id="th-stage">مرحلة الاعتماد</th>
+                            <th class="p-3 text-center" id="th-actions">الإجراءات والموافقات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-table" class="divide-y divide-slate-200"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 id="modal-title" class="text-base font-bold text-blue-950">إنشاء أمر عمل جديد وحصر مواد العقد</h3>
+                <button type="button" onclick="toggleModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form id="order-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="edit-id">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label id="lbl-code" class="text-xs font-bold text-slate-700 block mb-1">رمز أمر العمل *</label>
+                        <input type="text" id="code" required class="w-full border p-2 rounded-lg text-sm bg-white font-bold text-blue-950 outline-none" placeholder="WO-2026-101">
+                    </div>
+                    <div>
+                        <label id="lbl-wilayat" class="text-xs font-bold text-slate-700 block mb-1">الولاية *</label>
+                        <select id="wilayat" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option value="البريمي">البريمي</option>
+                            <option value="محضة">محضة</option>
+                            <option value="السنينة">السنينة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label id="lbl-region" class="text-xs font-bold text-slate-700 block mb-1">المنطقة / الشارع *</label>
+                        <input type="text" id="region" required class="w-full border p-2 rounded-lg text-sm" placeholder="شارع الشريعة">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl border">
+                    <div>
+                        <label id="lbl-issue" class="text-xs font-bold text-slate-700 block mb-1">تاريخ الإصدار *</label>
+                        <input type="date" id="issueDate" required onchange="calculateCompletionDate()" class="w-full border p-2 rounded-lg text-sm bg-white font-semibold">
+                    </div>
+                    <div>
+                        <label id="lbl-dur" class="text-xs font-bold text-slate-700 block mb-1">المدة (بالأيام) *</label>
+                        <input type="number" min="1" id="durationDays" required oninput="calculateCompletionDate()" class="w-full border p-2 rounded-lg text-sm bg-white font-semibold" placeholder="30">
+                    </div>
+                    <div>
+                        <label id="lbl-target" class="text-xs font-bold text-slate-700 block mb-1">تاريخ الإنجاز المستهدف *</label>
+                        <input type="date" id="targetCompletionDate" required readonly class="w-full border p-2 rounded-lg text-sm bg-slate-100 font-bold text-blue-950 cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label id="lbl-contractor" class="text-xs font-bold text-slate-700 block mb-1">المقاول</label>
+                        <input type="text" id="contractor" class="w-full border p-2 rounded-lg text-sm" placeholder="شركة البريمي للمقاولات">
+                    </div>
+                    <div>
+                        <label id="lbl-priority" class="text-xs font-bold text-slate-700 block mb-1">الأولوية</label>
+                        <select id="priority" class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option value="عادي">عادي</option>
+                            <option value="متوسط">متوسط</option>
+                            <option value="عاجل (طوارئ)" class="text-red-600 font-bold">عاجل (طوارئ)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label id="lbl-wstatus" class="text-xs font-bold text-slate-700 block mb-1">حالة العمل *</label>
+                        <select id="status" class="w-full border p-2 rounded-lg text-sm bg-white font-bold text-blue-950">
+                            <option value="مفتوح">مفتوح</option>
+                            <option value="قيد التنفيذ">قيد التنفيذ</option>
+                            <option value="مغلق">مغلق (مكتمل)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <fieldset class="bg-slate-50 p-3.5 rounded-xl border space-y-3">
+                    <div class="flex justify-between items-center">
+                        <legend id="lbl-boq-legend" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-amber-500"></i> بنود العقد المعتمدة
+                        </legend>
+                        <button type="button" onclick="addBOQItemRow()" id="btn-add-boq" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-md text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> إضافة بند
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs bg-white rounded-lg border">
+                            <thead class="bg-slate-200 text-slate-700 border-b">
+                                <tr>
+                                    <th class="p-2" id="th-boq-item">اختر بند العقد</th>
+                                    <th class="p-2 w-20" id="th-boq-unit">الوحدة</th>
+                                    <th class="p-2 w-20" id="th-boq-qty">الكمية</th>
+                                    <th class="p-2 w-28" id="th-boq-rate">السعر الفردي</th>
+                                    <th class="p-2 w-28" id="th-boq-total">الإجمالي</th>
+                                    <th class="p-2 w-10 text-center" id="th-boq-del">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="boq-items-body" class="divide-y"></tbody>
+                            <tfoot class="bg-slate-100 font-bold border-t">
+                                <tr>
+                                    <td colspan="4" class="p-2 text-left" id="lbl-boq-total-txt">إجمالي التكلفة التقديرية لأمر العمل:</td>
+                                    <td class="p-2 text-blue-950 font-black text-sm" id="grand-total-display">0.000 ر.ع</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </fieldset>
+
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border text-xs">
+                    <div>
+                        <label id="lbl-lat" class="font-bold text-slate-700 block mb-0.5">خط العرض (Latitude)</label>
+                        <input type="number" step="any" id="lat" required class="w-full border p-1.5 rounded text-xs bg-white">
+                    </div>
+                    <div>
+                        <label id="lbl-lng" class="font-bold text-slate-700 block mb-0.5">خط الطول (Longitude)</label>
+                        <input type="number" step="any" id="lng" required class="w-full border p-1.5 rounded text-xs bg-white">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t">
+                    <button type="button" onclick="toggleModal()" id="btn-cancel" class="px-4 py-2 border rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-100">إلغاء</button>
+                    <button type="submit" id="btn-save" class="px-5 py-2 bg-blue-950 hover:bg-blue-900 text-white font-bold rounded-lg text-sm shadow">حفظ أمر العمل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Official Printable PDF Template -->
+    <div id="pdf-template" dir="ltr" class="hidden bg-white p-8 max-w-3xl mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+        <div class="text-center text-[11px] font-bold text-purple-800 mb-1" style="font-family: 'Amiri', serif;">بسم الله الرحمن الرحيم</div>
+        <div class="flex justify-between items-center border-b pb-4 mb-4">
+            <div class="text-left font-serif text-[11px] text-purple-900 leading-snug w-1/3">
+                <p class="italic text-[13px] font-bold">Sultanate of Oman</p>
+                <p class="font-sans text-[10px]">Ministry of Transport, Communications<br>& Information Technology</p>
+                <p class="font-serif italic text-[11px]">Muscat</p>
+            </div>
+            <div class="w-1/3 flex justify-center">
+                <svg class="w-16 h-16 text-red-700 fill-current" viewBox="0 0 100 100">
+                    <path d="M50 10 L54 22 L66 22 L56 30 L60 42 L50 34 L40 42 L44 30 L34 22 L46 22 Z" />
+                    <path d="M25 65 Q50 85 75 65" fill="none" stroke="currentColor" stroke-width="4"/>
+                    <path d="M30 35 L70 65 M30 65 L70 35" stroke="currentColor" stroke-width="3"/>
+                </svg>
+            </div>
+            <div class="text-right font-semibold text-[12px] text-purple-900 leading-snug w-1/3" style="font-family: 'Amiri', serif;">
+                <p class="text-[14px] font-black">سلطنة عمان</p>
+                <p class="text-[11px] font-bold">وزارة النقل والاتصالات وتقنية المعلومات</p>
+                <p class="text-[12px] font-bold">مسقط</p>
+            </div>
+        </div>
+
+        <div class="text-center font-bold text-red-700 space-y-0.5 mb-4 uppercase text-[10.5px]">
+            <p class="tracking-wide">SULTANATE OF OMAN</p>
+            <p>MINISTRY OF TRANSPORT, COMMUNICATIONS & INFORMATION TECHNOLOGY</p>
+            <p>DIRECTORATE GENERAL OF ROAD & LAND TRANSPORT</p>
+            <p class="text-red-700 mt-2 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
+            <p class="text-red-700 font-black">( AL BURAIMI GOVERNORATE ) - ( FOR 5 YEARS )</p>
+        </div>
+
+        <div class="grid grid-cols-12 gap-y-1 text-[11px] font-bold mb-4 border-t border-b py-2 text-slate-900 text-left">
+            <div class="col-span-4 uppercase">WORK ORDER NO</div>
+            <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
+            <div class="col-span-4 uppercase">DATE OF ISSUE</div>
+            <div class="col-span-8" id="pdf-issue-date">---</div>
+            <div class="col-span-4 uppercase">PERIOD</div>
+            <div class="col-span-8" id="pdf-duration">---</div>
+            <div class="col-span-4 uppercase">DATE OF COMP</div>
+            <div class="col-span-8" id="pdf-target-date">---</div>
+            <div class="col-span-4 uppercase">LOCATION</div>
+            <div class="col-span-8" id="pdf-location">---</div>
+        </div>
+
+        <p class="font-bold text-[11px] mb-2 text-left">List of work as per the Work Order No.</p>
+
+        <table class="w-full border-collapse border border-slate-900 text-[10px] mb-6 text-left">
+            <thead>
+                <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-900">
+                    <th class="border border-slate-900 p-1.5 w-20 text-center">Item No.</th>
+                    <th class="border border-slate-900 p-1.5 text-center">Description</th>
+                    <th class="border border-slate-900 p-1.5 w-16 text-center">Unit</th>
+                    <th class="border border-slate-900 p-1.5 w-20 text-center">Unit rate<br>(R.O.)</th>
+                    <th class="border border-slate-900 p-1.5 w-20 text-center">Estimated<br>Quantity</th>
+                    <th class="border border-slate-900 p-1.5 w-24 text-center">Amount (R.O.)</th>
+                </tr>
+            </thead>
+            <tbody id="pdf-items-body" class="divide-y divide-slate-900"></tbody>
+            <tfoot>
+                <tr class="font-black border-t border-slate-900">
+                    <td colspan="5" class="border border-slate-900 p-1.5 text-right uppercase">Total cost of the maintenance order (R.O)</td>
+                    <td class="border border-slate-900 p-1.5 text-center text-slate-950 font-black text-[11px]" id="pdf-grand-total">0.000</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- Signatures Block -->
+        <div class="pt-6 border-t border-slate-300">
+            <div class="grid grid-cols-2 gap-8 text-center font-bold text-[11px] mb-12">
+                <div>
+                    <p>Project Engineer / Road Supervisor</p>
+                    <p class="text-slate-500 text-[10px] font-normal" id="sig-eng">Status: Pending</p>
+                </div>
+                <div>
+                    <p>Head Section of Road Maintenance</p>
+                    <p class="text-slate-500 text-[10px] font-normal" id="sig-head">Status: Pending</p>
+                </div>
+            </div>
+            <div class="text-center font-bold text-[11px]">
+                <p>Director of Governorate Road Department</p>
+                <p class="text-slate-500 text-[10px] font-normal" id="sig-director">Status: Pending</p>
+            </div>
+        </div>
+
+        <div class="mt-12 pt-2 border-t border-red-700 flex justify-between items-center text-[9px] text-red-800 font-bold">
+            <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
+            <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
         </div>
     </div>
 
     <script>
-        let currentLang = 'ar';
-
-        // قاعدة البيانات الشاملة للـ 181 بنداً المستخرجة من ملف وصف الأعمال
+        // وحدات القياس الهندسية العالمية الدقيقة
         const contractBOQLibrary = [
-            { code: "1.3.5 (ii)", nameAr: "أخذ العينات والاختبار لأي نوع من الأصول والمواد في المختبر المعتمد الخاضع لموافقات المهندس.", nameEn: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", rate: "included" },
-            { code: "1.4.3(i)", nameAr: "تعبئة وتسريح مرافق موقع المقاول", nameEn: "Mobilization and demobilization of Contractor's site facilities", unit: "L.S.", rate: "42500" },
-            { code: "1.4.3(ii)", nameAr: "صيانة مرافق موقع المقاول", nameEn: "Maintenance of Contractor's site facilities", unit: "month", rate: "20000" },
-            { code: "1.7.6(i)", nameAr: "صيانة وحماية حركة المرور في كافة أوامر الأعمال التي تحتاج إلى تحويلة وحسب توجيهات المهندس", nameEn: "Maintenance and protection of traffic in all works orders that needs a diversion and as directed by the Engineer", unit: "-", rate: "included" },
-            { code: "1.7.6(ii)", nameAr: "توريد ودمك القاعدة الفرعية على التحويلات حسب طلب المهندس (أي سمك)", nameEn: "Supply and compaction of sub-base on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", rate: "0.1" },
-            { code: "1.7.6(iii)", nameAr: "توريد ودمك الطبقة الأساسية البيتومينية على التحويلات حسب طلب المهندس (أي سمك)", nameEn: "Supply and compaction of bituminous base course on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", rate: "1" },
-            { code: "1.7.6(iv)", nameAr: "توريد طبقة أساسية من البيتومين على التحويلات حسب طلب المهندس", nameEn: "Supply of bituminous prime coat on Diversions where ordered by the Engineer", unit: "kg", rate: "0.1" },
-            { code: "1.11.8(i)", nameAr: "توفير الرسومات المبنية والرسومات القياسية ومواصفات السجلات والسجلات المتنوعة على النحو المحدد (إذا لزم الأمر أو حسب تعليمات المهندس)", nameEn: "Provision of As-built drawings, record drawings, record specifications and miscellaneous records as specified (if required or as Engineer instruction)", unit: "-", rate: "included" },
-            { code: "1.14.8(i)", nameAr: "توفير وتركيب ونقل وصيانة اللوحات الإرشادية للمشروع (نوع الألومنيوم)", nameEn: "Provision, erection, relocation, and maintenance of project signboards (aluminium type)", unit: "nr.", rate: "2000" },
-            { code: "1.14.8(ii)", nameAr: "إزالة اللوحات الإرشادية للمشروع (نوع الألومنيوم)", nameEn: "Removal of project signboards (aluminium type)", unit: "nr.", rate: "96.22" },
-            { code: "2.1.5(i)a", nameAr: "تنظيف العبارات الصندوقية، والعبارات الأنبوبية، ومآزر المجاري، والعبارات المهواة. (أي حجم، أي عدد من الخلايا داخل المحافظة)", nameEn: "Cleaning of box culverts, pipe culverts, drainage aprons, and vent culverts. (Any size, any number of cells within the Governorate)", unit: "No.of Cells", rate: "12" },
-            { code: "2.1.5(i)b", nameAr: "تنظيف الخنادق الجانبية والقنوات بأي حجم", nameEn: "Cleaning of side ditches and channels of any size", unit: "Lin.m", rate: "1" },
-            { code: "2.1.5(i)c", nameAr: "تنظيف سطح الطريق من مواد الحطام والرمال التي تحملها الرياح والصخور المتساقطة", nameEn: "Cleaning of road surface from debris, windblown sand, fallen rocks", unit: "Lin.m", rate: "1" },
-            { code: "2.1.5(i)d", nameAr: "تنظيف جسور قاع الوادي وممر الفيضان وممر الفيضان المنفوخ من الحطام والتربة والصخور", nameEn: "Cleaning of wadi bed bridges, floodway, and blown-up floodway from debris, soil, and rocks", unit: "Location", rate: "22" },
-            { code: "2.2.5(ii)", nameAr: "إزالة والتخلص من الخرسانة المسلحة (أي نوع وعدد الخلايا وحجم الهيكل)", nameEn: "Removal and disposal of Reinforced Concrete (any type, number of cells and structure size)", unit: "cu.m.", rate: "1.9" },
-            { code: "2.2.5(iii)", nameAr: "إزالة والتخلص من أعمال البناء الحجرية أو أعمال الحجار (أي نوع)", nameEn: "Removal and disposal of Stone Masonry or Rip-rap works (any type)", unit: "cu.m.", rate: "1" },
-            { code: "2.3.5(i)", nameAr: "أعمال صيانة الخرسانة المسلحة للعبارات الصندوقية والجسور وأي منشآت أخرى", nameEn: "Maintenance work of reinforced concrete for box culverts, bridges and any other structures", unit: "sq.m.", rate: "50" },
-            { code: "2.8.5(iv)", nameAr: "توريد ودمك مواد تحت الأساس (Sub-base)", nameEn: "Supply and compaction of sub-base material", unit: "cu.m.", rate: "6.5" },
-            { code: "2.8.5(v)", nameAr: "توريد ودمك مواد طبقة الأساس (Base course)", nameEn: "Supply and compaction of base course material", unit: "cu.m.", rate: "9.5" },
-            { code: "2.8.5(viii)", nameAr: "توريد وفرش ودمك طبقة الرصف الأسفلتي السطحية (Wearing Course)", nameEn: "Supply, laying and compacting asphalt concrete wearing course", unit: "cu.m.", rate: "35" },
-            { code: "2.9.5(i)", nameAr: "إصلاح الحفر والهبوطات بالأسفلت (Patching and Pothole Repair)", nameEn: "Patching and pothole repair with asphalt", unit: "sq.m.", rate: "12" },
-            { code: "2.10.5(i)", nameAr: "توريد وتركيب حواجز الحماية المعدنية (Guardrails - W-Beam)", nameEn: "Supply and installation of metal guardrails (W-Beam)", unit: "m.", rate: "25" },
-            { code: "2.11.5(i)", nameAr: "تخطيط الطرق بالخطوط العاكسة (Thermo-plastic Road Markings)", nameEn: "Thermoplastic road markings (White/Yellow)", unit: "sq.m.", rate: "4.5" },
-            { code: "2.12.5(i)", nameAr: "توريد وتركيب العواكس الأرضية (Road Studs / Cat's Eyes)", nameEn: "Supply and installation of road studs (Cat's eyes)", unit: "nr.", rate: "3.5" },
-            { code: "2.13.5(i)", nameAr: "توريد وتركيب اللوحات المرورية التحذيرية والتنظيمية والإرشادية", nameEn: "Supply and installation of warning, regulatory and informational traffic signs", unit: "nr.", rate: "65" }
-            // تم دمج العينة التمثيلية؛ ويتم اختيار العناصر فوراً من هذه القاعدة الشاملة.
+            { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
+            { itemNo: "1.4.3(i)", desc: "Mobilization and demobilization of Contractor's site facilities", unit: "l.s.", price: 42500 },
+            { itemNo: "1.4.3(ii)", desc: "Maintenance of Contractor's site facilities", unit: "month", price: 20000 },
+            { itemNo: "1.7.6(i)", desc: "Maintenance and protection of traffic in all works orders that needs a diversion and as directed by the Engineer", unit: "-", price: 0 },
+            { itemNo: "1.7.6(ii)", desc: "Supply and compaction of sub-base on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", price: 0.1 },
+            { itemNo: "1.7.6(iii)", desc: "Supply and compaction of bituminous base course on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", price: 1 },
+            { itemNo: "1.7.6(iv)", desc: "Supply of bituminous prime coat on Diversions where ordered by the Engineer", unit: "kg", price: 0.1 },
+            { itemNo: "1.14.8(i)", desc: "Provision, erection, relocation, and maintenance of project signboards (aluminium type)", unit: "nr.", price: 2000 },
+            { itemNo: "1.14.8(ii)", desc: "Removal of project signboards (aluminium type)", unit: "nr.", price: 96.22 },
+            { itemNo: "2.1.5(i)a", desc: "Clearing of Box Culverts, Pipe Culverts, culvert aprons and vented culverts", unit: "No.of Cells", price: 12 },
+            { itemNo: "2.1.5(i)b", desc: "Cleaning of Side Ditche's and Channel's any Size", unit: "Lin.m", price: 1 },
+            { itemNo: "2.1.5(i)c", desc: "Cleaning of Road Surface from debris Materials and windblown sand, fallen rocks", unit: "Lin.m", price: 1 },
+            { itemNo: "2.1.5(i)d", desc: "Cleaning of Bridges Wadi Bed, Floodway and vented Floodway from debris, Soil and Boulders", unit: "Location", price: 22 },
+            { itemNo: "2.2.5(ii)", desc: "Removal and Disposal of reinforced concrete", unit: "cu.m.", price: 1.9 },
+            { itemNo: "2.2.5(v)", desc: "Removal and Disposal of curbs", unit: "Lin.m", price: 1.9 },
+            { itemNo: "2.2.5(vi)", desc: "Removal and Disposal of tiles", unit: "sq.m.", price: 1.9 },
+            { itemNo: "2.2.5(vii)", desc: "Removal and Disposal of Pipe Culvert", unit: "Lin.m", price: 1.9 },
+            { itemNo: "2.2.5(viii)a", desc: "Removal and Disposal of existing bituminous pavement", unit: "cu.m.", price: 3.2 },
+            { itemNo: "2.2.5(viii)b", desc: "Removal and Disposal of existing Speed Humps", unit: "nr.", price: 18 },
+            { itemNo: "2.2.5(x)a", desc: "Removal and delivery of existing steel safety barrier beam including posts", unit: "Lin.m", price: 7.4 },
+            { itemNo: "2.3.6(i)", desc: "Unclassified Excavation to Embankment and Dykes as directed by the Engineer", unit: "cu.m.", price: 0.5 },
+            { itemNo: "3.2.6(ii)", desc: "Granular Sub-Base (Class B), (any thickness)", unit: "cu.m.", price: 1.9 },
+            { itemNo: "3.3.6(ii)", desc: "Aggregate Base Course (Class B), (any thickness)", unit: "cu.m.", price: 2 },
+            { itemNo: "4.2.8(i)", desc: "Bituminous prime coat", unit: "kg", price: 0.4 },
+            { itemNo: "4.2.8(ii)", desc: "Bituminous tack coat", unit: "kg", price: 0.35 },
+            { itemNo: "4.4.14(ii)", desc: "Bituminous base course (Class B) (variable thickness)", unit: "cu.m.", price: 60 },
+            { itemNo: "4.5.14(iii)", desc: "Bituminous wearing course (Class B) (variable thickness)", unit: "cu.m.", price: 60 },
+            { itemNo: "4.6.10(iii)", desc: "Bituminous Slurry Seal Coats", unit: "sq.m.", price: 5 },
+            { itemNo: "4.7.14(ii)", desc: "Bituminous Patching Work", unit: "cu.m.", price: 130 },
+            { itemNo: "4.9.11(i)", desc: "Surface milling (thickness 5cm maximum)", unit: "sq.m.", price: 2.5 },
+            { itemNo: "4.9.11(ii)", desc: "Crack Sealing", unit: "Lin.m", price: 3 },
+            { itemNo: "4.9.11 (iii)", desc: "Pavement Repairs (Overlay and Surface Preparation)", unit: "sq.m.", price: 6 },
+            { itemNo: "4.9.11 (iv)", desc: "Pavement Repairs (Complete Reconstruction)", unit: "sq.m.", price: 8 },
+            { itemNo: "4.9.11(vi)", desc: "Saw Cut in Asphalt Pavement (any thickness)", unit: "Lin.m", price: 1 },
+            { itemNo: "4.10.6(ii)", desc: "Speed humps including marking and signs", unit: "nr.", price: 500 },
+            { itemNo: "5.1.7(i)b", desc: "Concrete Class 35/20 for box culvert, wing wall, retaining wall, head wall", unit: "cu.m.", price: 16 },
+            { itemNo: "5.2.6(ii)", desc: "High tensile steel bar reinforcement of any diameter", unit: "t.", price: 410 },
+            { itemNo: "5.2.6(iii)", desc: "Fabric wire mesh reinforcement of any size", unit: "t.", price: 325 },
+            { itemNo: "5.7.6(ii)", desc: "Reinforced Cement Concrete Pavement", unit: "cu.m.", price: 37 },
+            { itemNo: "9.1.6(i)", desc: "Loose Stone Riprap for Side Slope", unit: "cu.m.", price: 14 },
+            { itemNo: "9.2.6(i)", desc: "Gabion Box including Steel angles for Side Slope", unit: "cu.m.", price: 25 },
+            { itemNo: "9.4.6 (iii)", desc: "Spread Concrete (Shotcrete) with mesh Reinforcement", unit: "sq.m.", price: 23 },
+            { itemNo: "12.1.7(i)", desc: "Precast Concrete Tiles Paving (any Type)", unit: "sq.m.", price: 3.75 },
+            { itemNo: "12.1.7(ii)", desc: "Precast Concrete Block Paving (any Type)", unit: "sq.m.", price: 3.75 },
+            { itemNo: "12.1.7(v)a", desc: "Precast Concrete Curb (Non-Mountable Type)", unit: "Lin.m", price: 4.65 },
+            { itemNo: "13.1.7(i)", desc: "W-Beam Guard Rail, Standard Section", unit: "Lin.m", price: 20 },
+            { itemNo: "14.1.7(iii)a", desc: "Highway sign, rectangular size (finished sign area per sq.m)", unit: "sq.m.", price: 60 },
+            { itemNo: "14.2.6(i)", desc: "Traffic Line (White/Yellow) (type-2 thermoplastic)", unit: "sq.m.", price: 5.3 },
+            { itemNo: "14.2.6 (iv)", desc: "Curb Painting (any Type)", unit: "sq.m.", price: 1.5 },
+            { itemNo: "14.2.6(v)", desc: "Removal of Existing Road Markings", unit: "sq.m.", price: 10 }
         ];
 
-        document.getElementById('orderDate').valueAsDate = new Date();
+        let map, markersGroup;
+        let globalOrders = [];
+        let currentUser = { name: '', role: '' };
+        let currentLang = 'ar';
+
+        const translations = {
+            ar: {
+                htmlLang: 'ar', dir: 'rtl',
+                langBtn: 'English',
+                loginTitle: 'تسجيل الدخول المؤسسي الآمن',
+                loginDesc: 'أدخل بيانات الاعتماد الرسمية الخاصة بك (البريد وكلمة المرور)',
+                loginEmailLbl: 'البريد الإلكتروني:',
+                loginPassLbl: 'كلمة المرور:',
+                loginBtn: 'دخول للنظام',
+                hTitle: 'نظام إدارة العمليات الطرقية (ROWADS)',
+                hSub: 'مديرية الطرق بمحافظة البريمي',
+                createBtn: 'إنشاء أمر عمل جديد',
+                statTotal: 'إجمالي أوامر العمل',
+                statOpen: 'مفتوح / قيد التنفيذ',
+                statClosed: 'مغلق / مكتمل',
+                statCost: 'إجمالي التكلفة التقديرية',
+                mapTitle: 'خريطة مواقع العمل',
+                tableTitle: 'سجل أوامر العمل ومسار الموافقات المؤسسية',
+                thCode: 'رمز الأمر', thLoc: 'الولاية والمنطقة', thBy: 'أنشئ بواسطة', thCost: 'التكلفة الإجمالية', thStatus: 'حالة العمل', thStage: 'مرحلة الاعتماد', thActions: 'الإجراءات والموافقات',
+                modalTitleCreate: 'إنشاء أمر عمل جديد وحصر مواد العقد',
+                lblCode: 'رمز أمر العمل *', lblWilayat: 'الولاية *', lblRegion: 'المنطقة / الشارع *',
+                lblIssue: 'تاريخ الإصدار *', lblDur: 'المدة (بالأيام) *', lblTarget: 'تاريخ الإنجاز المستهدف *',
+                lblContractor: 'المقاول', lblPriority: 'الأولوية', lblWStatus: 'حالة العمل *',
+                boqLegend: 'بنود العقد المعتمدة', addBoqBtn: 'إضافة بند',
+                thBoqItem: 'اختر بند العقد', thBoqUnit: 'الوحدة', thBoqQty: 'الكمية', thBoqRate: 'السعر الفردي', thBoqTotal: 'الإجمالي', thBoqDel: 'حذف',
+                boqTotalTxt: 'إجمالي التكلفة التقديرية لأمر العمل:',
+                lblLat: 'خط العرض (Latitude)', lblLng: 'خط الطول (Longitude)',
+                cancelBtn: 'إلغاء', saveBtn: 'حفظ أمر العمل'
+            },
+            en: {
+                htmlLang: 'en', dir: 'ltr',
+                langBtn: 'العربية',
+                loginTitle: 'Secure System Login',
+                loginDesc: 'Enter your official credentials (Email & Password)',
+                loginEmailLbl: 'Email Address:',
+                loginPassLbl: 'Password:',
+                loginBtn: 'Login to System',
+                hTitle: 'ROWADS Road Operations & Management System',
+                hSub: 'Roads Department - Al Buraimi Governorate',
+                createBtn: 'Create New Work Order',
+                statTotal: 'Total Work Orders',
+                statOpen: 'Open / In Progress',
+                statClosed: 'Closed / Completed',
+                statCost: 'Total Estimated Budget',
+                mapTitle: 'Work Sites Map',
+                tableTitle: 'Work Orders Register & Approval Workflow',
+                thCode: 'WO Code', thLoc: 'Wilayat & Area', thBy: 'Created By', thCost: 'Total Cost', thStatus: 'Work Status', thStage: 'Approval Stage', thActions: 'Actions & Approvals',
+                modalTitleCreate: 'Create New Work Order & BOQ Quantities',
+                lblCode: 'WO Reference Code *', lblWilayat: 'Wilayat *', lblRegion: 'Area / Street *',
+                lblIssue: 'Work Order Issue Date *', lblDur: 'Duration (in Days) *', lblTarget: 'Target Completion Date *',
+                lblContractor: 'Contractor', lblPriority: 'Priority', lblWStatus: 'Work Status *',
+                boqLegend: 'Approved Contract BOQ Items', addBoqBtn: 'Add BOQ Item',
+                thBoqItem: 'Select Contract Item', thBoqUnit: 'Unit', thBoqQty: 'Qty', thBoqRate: 'Unit Rate (OMR)', thBoqTotal: 'Total (OMR)', thBoqDel: 'Delete',
+                boqTotalTxt: 'Total Work Order Estimated Cost:',
+                lblLat: 'Latitude (Lat)', lblLng: 'Longitude (Lng)',
+                cancelBtn: 'Cancel', saveBtn: 'Save Work Order'
+            }
+        };
 
         function toggleLanguage() {
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
-            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
-            document.documentElement.setAttribute('lang', currentLang);
-            
-            document.getElementById('langBtnText').innerText = currentLang === 'ar' ? 'English' : 'عربي';
-            document.getElementById('formTitle').innerText = currentLang === 'ar' ? 'إنشاء أمر عمل جديد' : 'Create New Work Order';
-            document.getElementById('lblOrderNo').innerText = currentLang === 'ar' ? 'رقم أمر العمل' : 'Work Order No';
-            document.getElementById('lblDate').innerText = currentLang === 'ar' ? 'التاريخ' : 'Date';
-            document.getElementById('lblContractor').innerText = currentLang === 'ar' ? 'المقاول المنفذ' : 'Contractor Name';
-            document.getElementById('lblLocation').innerText = currentLang === 'ar' ? 'موقع العمل' : 'Work Location';
-            document.getElementById('sectionItemsTitle').innerText = currentLang === 'ar' ? 'بنود الأعمال (من قائمة العقد الشاملة)' : 'Work Items (From Full Contract BOQ)';
-            document.getElementById('thItemDesc').innerText = currentLang === 'ar' ? 'اختر البند' : 'Select Item Description';
-            document.getElementById('thUnit').innerText = currentLang === 'ar' ? 'الوحدة' : 'Unit';
-            document.getElementById('thQty').innerText = currentLang === 'ar' ? 'الكمية' : 'Qty';
-            document.getElementById('thRate').innerText = currentLang === 'ar' ? 'السعر (ر.ع)' : 'Rate (RO)';
-            document.getElementById('btnAddItem').innerText = currentLang === 'ar' ? 'إضافة بند جديد' : 'Add New Item';
-            document.getElementById('lblApprover').innerText = currentLang === 'ar' ? 'حالة الاعتماد والموافقات' : 'Approval Status';
-            document.getElementById('btnGeneratePDF').innerText = currentLang === 'ar' ? 'اعتماد واستخراج تقرير الـ PDF' : 'Approve & Generate PDF Report';
+            localStorage.setItem('rowads_lang_unified', currentLang);
+            applyLanguage();
         }
 
-        function addItemRow() {
-            const tbody = document.getElementById('itemsTableBody');
-            const rowCount = tbody.rows.length + 1;
-            const tr = document.createElement('tr');
+        function applyLanguage() {
+            const t = translations[currentLang];
+            const root = document.getElementById('html-root');
+            root.setAttribute('lang', t.htmlLang);
+            root.setAttribute('dir', t.dir);
 
-            let optionsHtml = '<option value="">-- اختر البند --</option>';
-            contractBOQLibrary.forEach((item, index) => {
-                const label = currentLang === 'ar' ? `[${item.code}] ${item.nameAr}` : `[${item.code}] ${item.nameEn}`;
-                optionsHtml += `<option value="${index}">${label}</option>`;
-            });
+            document.getElementById('lang-btn-text').innerText = t.langBtn;
+            document.getElementById('l-title').innerText = t.loginTitle;
+            document.getElementById('l-desc').innerText = t.loginDesc;
+            document.getElementById('l-lbl-email').innerText = t.loginEmailLbl;
+            document.getElementById('l-lbl-pass').innerText = t.loginPassLbl;
+            document.getElementById('l-btn').innerHTML = `${t.loginBtn} <i class="fa-solid fa-arrow-${currentLang==='ar'?'left':'right'}-long mr-2"></i>`;
 
-            tr.innerHTML = `
-                <td class="text-center">${rowCount}</td>
-                <td><select class="form-select item-select" onchange="updateItemDetails(this)" required>${optionsHtml}</select></td>
-                <td><input type="text" class="form-control item-unit text-center" readonly value="-"></td>
-                <td><input type="number" class="form-control item-qty text-center" value="1" min="0.1" step="any" required></td>
-                <td><input type="text" class="form-control item-rate text-center" readonly value="0"></td>
-                <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('tr').remove();"><i class="fas fa-trash"></i></button></td>
-            `;
-            tbody.appendChild(tr);
+            document.getElementById('h-title').innerText = t.hTitle;
+            document.getElementById('h-subtitle').innerText = t.hSub;
+            document.getElementById('txt-create-btn').innerText = t.createBtn;
+            document.getElementById('st-total-lbl').innerText = t.statTotal;
+            document.getElementById('st-open-lbl').innerText = t.statOpen;
+            document.getElementById('st-closed-lbl').innerText = t.statClosed;
+            document.getElementById('st-cost-lbl').innerText = t.statCost;
+            document.getElementById('map-title').innerHTML = `<i class="fa-solid fa-map-location-dot text-amber-500"></i> ${t.mapTitle}`;
+            document.getElementById('table-title').innerText = t.tableTitle;
+
+            document.getElementById('th-code').innerText = t.thCode;
+            document.getElementById('th-loc').innerText = t.thLoc;
+            document.getElementById('th-by').innerText = t.thBy;
+            document.getElementById('th-cost').innerText = t.thCost;
+            document.getElementById('th-status').innerText = t.thStatus;
+            document.getElementById('th-stage').innerText = t.thStage;
+            document.getElementById('th-actions').innerText = t.thActions;
+
+            document.getElementById('lbl-code').innerText = t.lblCode;
+            document.getElementById('lbl-wilayat').innerText = t.lblWilayat;
+            document.getElementById('lbl-region').innerText = t.lblRegion;
+            document.getElementById('lbl-issue').innerText = t.lblIssue;
+            document.getElementById('lbl-dur').innerText = t.lblDur;
+            document.getElementById('lbl-target').innerText = t.lblTarget;
+            document.getElementById('lbl-contractor').innerText = t.lblContractor;
+            document.getElementById('lbl-priority').innerText = t.lblPriority;
+            document.getElementById('lbl-wstatus').innerText = t.lblWStatus;
+            document.getElementById('lbl-boq-legend').innerHTML = `<i class="fa-solid fa-list-check text-amber-500"></i> ${t.boqLegend}`;
+            document.getElementById('btn-add-boq').innerHTML = `<i class="fa-solid fa-plus"></i> ${t.addBoqBtn}`;
+            document.getElementById('th-boq-item').innerText = t.thBoqItem;
+            document.getElementById('th-boq-unit').innerText = t.thBoqUnit;
+            document.getElementById('th-boq-qty').innerText = t.thBoqQty;
+            document.getElementById('th-boq-rate').innerText = t.thBoqRate;
+            document.getElementById('th-boq-total').innerText = t.thBoqTotal;
+            document.getElementById('th-boq-del').innerText = t.thBoqDel;
+            document.getElementById('lbl-boq-total-txt').innerText = t.boqTotalTxt;
+            document.getElementById('lbl-lat').innerText = t.lblLat;
+            document.getElementById('lbl-lng').innerText = t.lblLng;
+            document.getElementById('btn-cancel').innerText = t.cancelBtn;
+            document.getElementById('btn-save').innerText = t.saveBtn;
+
+            const tableEl = document.getElementById('main-table-el');
+            tableEl.className = currentLang === 'en' ? "w-full text-left text-xs md:text-sm" : "w-full text-right text-xs md:text-sm";
+
+            if (currentUser.name) applyRolePermissions();
+            render();
         }
 
-        function updateItemDetails(selectEl) {
-            const index = selectEl.value;
-            const row = selectEl.closest('tr');
-            if (index === "") {
-                row.querySelector('.item-unit').value = "-";
-                row.querySelector('.item-rate').value = "0";
+        // تسجيل الدخول الآمن عبر Firebase Auth وجلب الصلاحية من Firestore
+        async function handleSecureLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (!email || !password) {
+                alert(currentLang === 'ar' ? 'الرجاء إدخال البريد وكلمة المرور' : 'Please enter email and password');
                 return;
             }
-            const item = contractBOQLibrary[index];
-            row.querySelector('.item-unit').value = item.unit;
-            row.querySelector('.item-rate').value = item.rate;
+
+            try {
+                const { signInWithEmailAndPassword, getDoc, doc } = window.firestoreTools;
+                const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
+                const uid = userCredential.user.uid;
+
+                const userDocRef = doc(window.db, "users", uid);
+                const userSnap = await getDoc(userDocRef);
+
+                if (userSnap.exists()) {
+                    currentUser = userSnap.data(); // جلب الصلاحية المحددة بالاسم والدور حصراً
+                    localStorage.setItem('rowads_auth_user', JSON.stringify(currentUser));
+                    applyRolePermissions();
+                    document.getElementById('login-modal').classList.add('hidden');
+                    showToast(currentLang === 'ar' ? 'تم تسجيل الدخول بنجاح' : 'Login successful');
+                } else {
+                    alert(currentLang === 'ar' ? 'هذا الحساب غير مسجل في جدول صلاحيات النظام' : 'User profile not found in permissions database');
+                    await window.auth.signOut();
+                }
+            } catch (error) {
+                console.error(error);
+                alert(currentLang === 'ar' ? 'خطأ في البريد الإلكتروني أو كلمة المرور' : 'Invalid email or password');
+            }
         }
 
-        // إضافة صف افتراضي عند الفتح
-        window.onload = function() {
-            addItemRow();
-        };
+        function logout() {
+            window.auth.signOut();
+            localStorage.removeItem('rowads_auth_user');
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
 
-        // توليد ملف الـ PDF مع إظهار الوصف باللغة الإنجليزية حصرياً كما طلبت
-        document.getElementById('workOrderForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
+        function applyRolePermissions() {
+            const roleNames = { 
+                ar: { employee: 'موظف', head: 'رئيس القسم', director: 'مدير الدائرة' },
+                en: { employee: 'Employee', head: 'Head Section', director: 'Director' }
+            };
+            document.getElementById('current-user-display').innerText = `${currentUser.name} (${roleNames[currentLang][currentUser.role]})`;
+            
+            const btnCreate = document.getElementById('btn-create');
+            if (currentUser.role === 'employee') {
+                btnCreate.style.display = 'flex';
+            } else {
+                btnCreate.style.display = 'none';
+            }
+            render();
+        }
 
-            const orderNo = document.getElementById('orderNo').value;
-            const orderDate = document.getElementById('orderDate').value;
-            const contractor = document.getElementById('contractorName').value;
-            const location = document.getElementById('workLocation').value;
-            const status = document.getElementById('approvalStatus').value;
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            document.getElementById('toast-icon').className = isError ? "fa-solid fa-circle-xmark text-red-400 text-lg" : "fa-solid fa-circle-check text-emerald-400 text-lg";
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+        }
 
-            // Header
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(13);
-            doc.text("DIRECTORATE OF ROADS - AL BURAIMI GOVERNORATE", 105, 15, { align: "center" });
-            doc.setFontSize(11);
-            doc.text("OFFICIAL WORK ORDER & BOQ REPORT", 105, 22, { align: "center" });
+        function calculateCompletionDate() {
+            const issueDateVal = document.getElementById('issueDate').value;
+            const durationVal = parseInt(document.getElementById('durationDays').value || 0);
+            if (issueDateVal && durationVal > 0) {
+                const issueDate = new Date(issueDateVal);
+                issueDate.setDate(issueDate.getDate() + durationVal);
+                document.getElementById('targetCompletionDate').value = issueDate.toISOString().split('T')[0];
+            }
+        }
 
-            doc.setLineWidth(0.4);
-            doc.line(15, 26, 195, 26);
+        function initMap() {
+            map = L.map('map').setView([24.25, 55.78], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            markersGroup = L.layerGroup().addTo(map);
+            map.on('click', (e) => {
+                if (currentUser.role === 'employee') openModalForCreate(e.latlng.lat.toFixed(5), e.latlng.lng.toFixed(5));
+            });
+        }
 
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            doc.text(`Work Order No: ${orderNo}`, 15, 34);
-            doc.text(`Date: ${orderDate}`, 15, 40);
-            doc.text(`Contractor: ${contractor}`, 115, 34);
-            doc.text(`Location: ${location}`, 115, 40);
-            doc.text(`Status: Approved by Director`, 15, 46);
+        function setupFirebaseRealtime() {
+            if (!window.firestoreTools) { setTimeout(setupFirebaseRealtime, 200); return; }
+            const { collection, onSnapshot, query } = window.firestoreTools;
+            onSnapshot(query(collection(window.db, "orders")), (snapshot) => {
+                globalOrders = [];
+                snapshot.forEach((docSnap) => globalOrders.push({ firestoreId: docSnap.id, ...docSnap.data() }));
+                render();
+            });
+        }
 
-            const rows = document.querySelectorAll('#itemsTableBody tr');
-            const tableRows = [];
-            let serial = 1;
+        function addBOQItemRow(itemNo = '', desc = '', unit = 'sq.m.', qty = 1, unitPrice = 0) {
+            const tbody = document.getElementById('boq-items-body');
+            const rowId = Date.now() + Math.random().toString(36).substring(2, 5);
+            let optionsHTML = `<option value="">-- ${currentLang==='ar'?'اختر بند العقد':'Select Contract Item'} --</option>`;
+            contractBOQLibrary.forEach((item, idx) => {
+                optionsHTML += `<option value="${idx}" ${itemNo === item.itemNo ? 'selected' : ''}>[${item.itemNo}] ${item.desc} (${item.unit})</option>`;
+            });
+
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowId}`;
+            tr.className = "boq-row hover:bg-slate-50";
+            tr.innerHTML = `
+                <td class="p-1.5">
+                    <select onchange="autoFillBOQItem(this, 'row-${rowId}')" class="boq-select w-full border rounded p-1.5 text-xs font-bold bg-white">${optionsHTML}</select>
+                    <input type="hidden" class="boq-no" value="${itemNo}"><input type="hidden" class="boq-desc" value="${desc}">
+                </td>
+                <td class="p-1.5"><input type="text" class="boq-unit w-full border rounded p-1.5 text-xs text-center font-bold bg-slate-50" value="${unit}"></td>
+                <td class="p-1.5"><input type="number" step="any" min="0" oninput="calculateBOQTotals()" class="boq-qty w-full border rounded p-1.5 text-xs font-bold text-center" value="${qty}"></td>
+                <td class="p-1.5"><input type="number" step="any" min="0" oninput="calculateBOQTotals()" class="boq-price w-full border rounded p-1.5 text-xs font-bold text-left" value="${unitPrice}"></td>
+                <td class="p-1.5 font-bold text-slate-800 boq-item-total text-left">0.000</td>
+                <td class="p-1.5 text-center"><button type="button" onclick="removeBOQRow('row-${rowId}')" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash-can"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+            calculateBOQTotals();
+        }
+
+        function autoFillBOQItem(selectEl, rowId) {
+            const item = contractBOQLibrary[selectEl.value];
+            const row = document.getElementById(rowId);
+            if (!item || !row) return;
+            row.querySelector('.boq-no').value = item.itemNo;
+            row.querySelector('.boq-desc').value = item.desc;
+            row.querySelector('.boq-unit').value = item.unit;
+            row.querySelector('.boq-price').value = item.price;
+            calculateBOQTotals();
+        }
+
+        function removeBOQRow(rowId) { document.getElementById(rowId)?.remove(); calculateBOQTotals(); }
+
+        function calculateBOQTotals() {
             let grandTotal = 0;
+            document.querySelectorAll('.boq-row').forEach(row => {
+                const total = (parseFloat(row.querySelector('.boq-qty').value || 0) * parseFloat(row.querySelector('.boq-price').value || 0));
+                row.querySelector('.boq-item-total').innerText = total.toFixed(3);
+                grandTotal += total;
+            });
+            const currency = currentLang === 'ar' ? 'ر.ع' : 'OMR';
+            document.getElementById('grand-total-display').innerText = grandTotal.toFixed(3) + ' ' + currency;
+            return grandTotal;
+        }
 
-            rows.forEach(row => {
-                const select = row.querySelector('.item-select');
-                const qtyInput = row.querySelector('.item-qty');
-                if (select.value !== "") {
-                    const item = contractBOQLibrary[select.value];
-                    const qty = parseFloat(qtyInput.value) || 0;
-                    const rateVal = item.rate === 'included' ? 0 : parseFloat(item.rate) || 0;
-                    const total = qty * rateVal;
-                    grandTotal += total;
+        function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
 
-                    tableRows.push([
-                        serial++,
-                        item.code,
-                        item.nameEn, // وصف البند باللغة الإنجليزية حصرياً للـ PDF
-                        item.unit,
-                        qty,
-                        item.rate,
-                        item.rate === 'included' ? 'Included' : total.toFixed(3)
-                    ]);
-                }
+        function openModalForCreate(lat = 24.25, lng = 55.78) {
+            if (currentUser.role !== 'employee') { showToast(currentLang==='ar'?'الصلاحية للموظفين فقط':'Only employees can create new work orders', true); return; }
+            document.getElementById('edit-id').value = '';
+            document.getElementById('modal-title').innerText = currentLang === 'ar' ? 'إنشاء أمر عمل جديد وحصر مواد العقد' : 'Create New Work Order & BOQ Quantities';
+            document.getElementById('order-form').reset();
+            document.getElementById('boq-items-body').innerHTML = '';
+            document.getElementById('code').value = `WO-2026-${globalOrders.length + 101}`;
+            document.getElementById('lat').value = lat; document.getElementById('lng').value = lng;
+            document.getElementById('issueDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('durationDays').value = 30;
+            document.getElementById('status').value = currentLang === 'ar' ? 'مفتوح' : 'Open';
+            calculateCompletionDate();
+            addBOQItemRow();
+            toggleModal();
+        }
+
+        function openModalForEdit(firestoreId) {
+            const o = globalOrders.find(item => item.firestoreId === firestoreId);
+            if (!o) return;
+            if (currentUser.role !== 'employee' && o.createdBy !== currentUser.name) {
+                showToast(currentLang === 'ar' ? 'لا يمكنك تعديل طلب أنشأه مستخدم آخر' : 'You cannot edit an order created by another user', true); return;
+            }
+
+            document.getElementById('edit-id').value = o.firestoreId;
+            document.getElementById('modal-title').innerText = currentLang === 'ar' ? `تعديل أمر العمل (${o.code})` : `Edit Work Order (${o.code})`;
+            document.getElementById('code').value = o.code;
+            document.getElementById('wilayat').value = o.wilayat;
+            document.getElementById('region').value = o.region || '';
+            document.getElementById('issueDate').value = o.issueDate || new Date().toISOString().split('T')[0];
+            document.getElementById('durationDays').value = o.durationDays || 30;
+            document.getElementById('targetCompletionDate').value = o.targetCompletionDate || '';
+            document.getElementById('contractor').value = o.contractor || '';
+            document.getElementById('priority').value = o.priority || (currentLang === 'ar' ? 'عادي' : 'Normal');
+            document.getElementById('status').value = o.status || (currentLang === 'ar' ? 'مفتوح' : 'Open');
+            document.getElementById('lat').value = o.lat || 24.25;
+            document.getElementById('lng').value = o.lng || 55.78;
+
+            document.getElementById('boq-items-body').innerHTML = '';
+            if (o.items && o.items.length > 0) {
+                o.items.forEach(item => addBOQItemRow(item.itemNo, item.desc, item.unit, item.qty, item.unitPrice));
+            } else {
+                addBOQItemRow();
+            }
+
+            toggleModal();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-id').value;
+            const { collection, addDoc, updateDoc, doc } = window.firestoreTools;
+
+            const items = [];
+            document.querySelectorAll('.boq-row').forEach(row => {
+                items.push({
+                    itemNo: row.querySelector('.boq-no').value,
+                    desc: row.querySelector('.boq-desc').value,
+                    unit: row.querySelector('.boq-unit').value,
+                    qty: parseFloat(row.querySelector('.boq-qty').value || 0),
+                    unitPrice: parseFloat(row.querySelector('.boq-price').value || 0),
+                    total: parseFloat(row.querySelector('.boq-qty').value || 0) * parseFloat(row.querySelector('.boq-price').value || 0)
+                });
             });
 
-            doc.autoTable({
-                startY: 52,
-                head: [['No.', 'Item Code', 'Description (English)', 'Unit', 'Qty', 'Rate (RO)', 'Amount (RO)']],
-                body: tableRows,
-                styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5 },
-                headStyles: { fillColor: [27, 77, 62], textColor: 255, fontStyle: 'bold' },
-                columnStyles: {
-                    0: { cellWidth: 8, halign: 'center' },
-                    1: { cellWidth: 22, halign: 'center' },
-                    2: { cellWidth: 78 },
-                    3: { cellWidth: 15, halign: 'center' },
-                    4: { cellWidth: 15, halign: 'center' },
-                    5: { cellWidth: 20, halign: 'right' },
-                    6: { cellWidth: 22, halign: 'right' }
+            const payload = {
+                code: document.getElementById('code').value.trim(),
+                wilayat: document.getElementById('wilayat').value,
+                region: document.getElementById('region').value,
+                issueDate: document.getElementById('issueDate').value,
+                durationDays: parseInt(document.getElementById('durationDays').value || 30),
+                targetCompletionDate: document.getElementById('targetCompletionDate').value,
+                contractor: document.getElementById('contractor').value,
+                priority: document.getElementById('priority').value,
+                status: document.getElementById('status').value,
+                lat: parseFloat(document.getElementById('lat').value),
+                lng: parseFloat(document.getElementById('lng').value),
+                items: items,
+                cost: calculateBOQTotals()
+            };
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(window.db, "orders", editId), payload);
+                    showToast(currentLang === 'ar' ? 'تم تحديث أمر العمل بنجاح' : 'Work Order updated successfully');
+                } else {
+                    payload.createdBy = currentUser.name;
+                    payload.approvalStage = currentLang === 'ar' ? 'مسودة (بانتظار موافقة رئيس القسم)' : 'Draft (Pending Head Section Review)';
+                    payload.signatures = { projectEngineer: false, headSection: false, director: false };
+                    await addDoc(collection(window.db, "orders"), payload);
+                    showToast(currentLang === 'ar' ? 'تم إنشاء الطلب وإرساله لرئيس القسم بنجاح' : 'Work Order created and sent to Head Section');
                 }
+                toggleModal();
+            } catch (err) {
+                console.error(err);
+                showToast(currentLang === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving data', true);
+            }
+        }
+
+        async function advanceApproval(firestoreId, nextStage) {
+            const o = globalOrders.find(item => item.firestoreId === firestoreId);
+            if (!o) return;
+
+            if (currentUser.role === 'employee') {
+                showToast(currentLang === 'ar' ? 'لا تمتلك صلاحية الاعتماد' : 'Employees do not have approval privileges', true);
+                return;
+            }
+            if (currentUser.role === 'head' && (nextStage === 'معتمد نهائياً' || nextStage === 'Fully Approved')) {
+                showToast(currentLang === 'ar' ? 'الاعتماد النهائي مخصص لمدير الدائرة فقط' : 'Final approval is restricted to the Department Director', true);
+                return;
+            }
+
+            const { updateDoc, doc } = window.firestoreTools;
+            let sigs = o.signatures || { projectEngineer: false, headSection: false, director: false };
+            let stage = nextStage;
+
+            if (nextStage.includes('Director') || nextStage.includes('المدير')) {
+                if (currentUser.role !== 'head') { showToast('Head Section privilege required', true); return; }
+                sigs.projectEngineer = true;
+                sigs.headSection = true;
+            } else if (nextStage.includes('Approved') || nextStage.includes('معتمد نهائياً')) {
+                if (currentUser.role !== 'director') { showToast('Director privilege required', true); return; }
+                sigs.director = true;
+            }
+
+            await updateDoc(doc(window.db, "orders", firestoreId), { approvalStage: stage, signatures: sigs });
+            showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
+        }
+
+        function generatePDF(firestoreId) {
+            const o = globalOrders.find(item => item.firestoreId === firestoreId);
+            if (!o) return;
+
+            document.getElementById('pdf-code').innerText = o.code;
+            document.getElementById('pdf-location').innerText = `${o.wilayat} (${o.region || ''})`;
+            document.getElementById('pdf-issue-date').innerText = o.issueDate || '---';
+            document.getElementById('pdf-duration').innerText = o.durationDays || '---';
+            document.getElementById('pdf-target-date').innerText = o.targetCompletionDate || '---';
+            document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
+
+            const sigs = o.signatures || {};
+            document.getElementById('sig-eng').innerText = sigs.projectEngineer ? "✔ Approved (Project Engineer)" : "Status: Pending";
+            document.getElementById('sig-head').innerText = sigs.headSection ? "✔ Approved (Head Section)" : "Status: Pending";
+            document.getElementById('sig-director').innerText = sigs.director ? "✔ Approved & Signed (Director of Roads)" : "Status: Pending";
+
+            const pdfTbody = document.getElementById('pdf-items-body');
+            pdfTbody.innerHTML = o.items.map(item => `
+                <tr class="border-b border-slate-900">
+                    <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo}</td>
+                    <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
+                    <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
+                    <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty).toFixed(2)}</td>
+                    <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total).toFixed(3)}</td>
+                </tr>
+            `).join('');
+
+            const element = document.getElementById('pdf-template');
+            element.classList.remove('hidden');
+            html2pdf().set({ margin: [8, 8, 8, 8], filename: `WorkOrder_${o.code}.pdf`, html2canvas: { scale: 2 } }).from(element).save().then(() => {
+                element.classList.add('hidden');
+                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
             });
+        }
 
-            let finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFont("helvetica", "bold");
-            doc.text(`Total Estimated Cost: ${grandTotal.toFixed(3)} R.O.`, 195, finalY, { align: 'right' });
+        async function deleteOrder(firestoreId) {
+            if (currentUser.role !== 'employee' && currentUser.role !== 'director') {
+                showToast(currentLang === 'ar' ? 'الصلاحية غير متاحة للحذف' : 'Permission denied for deletion', true); return;
+            }
+            if (confirm(currentLang === 'ar' ? 'هل أنت متأكد من حذف أمر العمل هذا؟' : 'Are you sure you want to delete this work order?')) {
+                try {
+                    const { doc, deleteDoc } = window.firestoreTools;
+                    await deleteDoc(doc(window.db, "orders", firestoreId));
+                    showToast(currentLang === 'ar' ? 'تم حذف أمر العمل بنجاح' : 'Work Order deleted successfully', false);
+                } catch (err) {
+                    showToast(currentLang === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Error deleting work order', true);
+                }
+            }
+        }
 
-            finalY += 20;
-            if (finalY > 250) { doc.addPage(); finalY = 20; }
+        function render() {
+            document.getElementById('stat-total').innerText = globalOrders.length;
+            const closedVals = ['مغلق', 'Closed'];
+            document.getElementById('stat-open').innerText = globalOrders.filter(o => !closedVals.includes(o.status)).length;
+            document.getElementById('stat-closed').innerText = globalOrders.filter(o => closedVals.includes(o.status)).length;
+            const currencySymbol = currentLang === 'ar' ? 'ر.ع' : 'OMR';
+            document.getElementById('stat-cost').innerText = globalOrders.reduce((acc, r) => acc + Number(r.cost || 0), 0).toFixed(3) + ' ' + currencySymbol;
+            document.getElementById('orders-count').innerText = globalOrders.length + (currentLang === 'ar' ? ' أمر عمل' : ' Orders');
 
-            doc.setFontSize(9);
-            doc.text("Prepared By: ___________________", 15, finalY);
-            doc.text("Checked By: ___________________", 80, finalY);
-            doc.text("Approved By (Director): ___________________", 135, finalY);
+            const tbody = document.getElementById('orders-table');
+            if (globalOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 font-bold">${currentLang==='ar'?'لا توجد أوامر عمل مسجلة حتى الآن.':'No work orders recorded yet.'}</td></tr>`;
+                return;
+            }
 
-            doc.save(`WorkOrder_${orderNo}.pdf`);
-        });
+            tbody.innerHTML = globalOrders.map(o => {
+                const isClosed = closedVals.includes(o.status);
+                const statusBadge = isClosed 
+                    ? `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">${currentLang==='ar'?'مغلق':'Closed'}</span>`
+                    : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-bold">${o.status || (currentLang==='ar'?'مفتوح':'Open')}</span>`;
+
+                const stageBadge = `<span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded text-xs font-bold">${o.approvalStage || (currentLang==='ar'?'مسودة':'Draft')}</span>`;
+                
+                let approvalButtons = '';
+                const stageStr = o.approvalStage || '';
+                if (stageStr.includes('رئيس القسم') || stageStr.includes('Head Section')) {
+                    if (currentUser.role === 'head') {
+                        const nextTxt = currentLang === 'ar' ? 'موافقة رئيس القسم' : 'Head Section Approve';
+                        const targetStage = currentLang === 'ar' ? 'مراجعة المدير' : 'Director Review';
+                        approvalButtons = `<button onclick="advanceApproval('${o.firestoreId}', '${targetStage}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow">${nextTxt}</button>`;
+                    } else {
+                        approvalButtons = `<span class="text-xs text-amber-600 font-bold">${currentLang==='ar'?'بانتظار اعتماد رئيس القسم':'Pending Head Section'}</span>`;
+                    }
+                } else if (stageStr.includes('المدير') || stageStr.includes('Director')) {
+                    if (currentUser.role === 'director') {
+                        const nextTxt = currentLang === 'ar' ? 'الاعتماد النهائي والتوقيع' : 'Director Final Sign';
+                        const targetStage = currentLang === 'ar' ? 'معتمد نهائياً' : 'Fully Approved';
+                        approvalButtons = `<button onclick="advanceApproval('${o.firestoreId}', '${targetStage}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow">${nextTxt}</button>`;
+                    } else {
+                        approvalButtons = `<span class="text-xs text-blue-600 font-bold">${currentLang==='ar'?'بانتظار اعتماد المدير':'Pending Director'}</span>`;
+                    }
+                } else if (stageStr.includes('معتمد نهائياً') || stageStr.includes('Fully Approved')) {
+                    const printTxt = currentLang === 'ar' ? 'طباعة الوثيقة الموقعة' : 'Print Signed PDF';
+                    approvalButtons = `<button onclick="generatePDF('${o.firestoreId}')" class="bg-purple-700 hover:bg-purple-800 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-file-pdf"></i> ${printTxt}</button>`;
+                } else {
+                    approvalButtons = `<span class="text-xs text-slate-500">${currentLang==='ar'?'بانتظار المسار':'Draft Created'}</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition border-b">
+                        <td class="p-3 font-bold text-blue-950">${o.code}</td>
+                        <td class="p-3">${o.wilayat} <span class="text-xs text-slate-500 block">${o.region || ''}</span></td>
+                        <td class="p-3 text-xs font-bold text-slate-700">${o.createdBy || 'System User'}</td>
+                        <td class="p-3 font-black text-slate-900">${(o.cost || 0).toFixed(3)} ${currencySymbol}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3">${stageBadge}</td>
+                        <td class="p-3 text-center space-x-1 ${currentLang==='ar'?'space-x-reverse':''}">
+                            ${approvalButtons}
+                            ${currentUser.role === 'employee' ? `<button onclick="openModalForEdit('${o.firestoreId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs" title="${currentLang==='ar'?'تعديل':'Edit'}"><i class="fa-solid fa-pen"></i></button>` : ''}
+                            <button onclick="deleteOrder('${o.firestoreId}')" class="bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded text-xs" title="${currentLang==='ar'?'حذف':'Delete'}"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.onload = () => { 
+            const savedLang = localStorage.getItem('rowads_lang_unified');
+            if (savedLang) currentLang = savedLang;
+            applyLanguage();
+
+            initMap(); 
+            setupFirebaseRealtime();
+
+            // فحص حالة المصادقة النشطة حالياً عبر Firebase Auth
+            setTimeout(() => {
+                window.auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        const { getDoc, doc } = window.firestoreTools;
+                        const userDocRef = doc(window.db, "users", user.uid);
+                        const userSnap = await getDoc(userDocRef);
+                        if (userSnap.exists()) {
+                            currentUser = userSnap.data();
+                            applyRolePermissions();
+                            document.getElementById('login-modal').classList.add('hidden');
+                        }
+                    }
+                });
+            }, 500);
+        };
     </script>
 </body>
 </html>
