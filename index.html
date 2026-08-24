@@ -835,41 +835,51 @@
         }
 
         function generatePDF(firestoreId) {
-            const o = globalOrders.find(item => item.firestoreId === firestoreId);
-            if (!o) return;
+    const o = globalOrders.find(item => item.firestoreId === firestoreId);
+    if (!o) return;
 
-            document.getElementById('pdf-code').innerText = o.code;
-            document.getElementById('pdf-location').innerText = `${o.wilayat} (${o.region || ''})`;
-            document.getElementById('pdf-issue-date').innerText = o.issueDate || '---';
-            document.getElementById('pdf-duration').innerText = o.durationDays || '---';
-            document.getElementById('pdf-target-date').innerText = o.targetCompletionDate || '---';
-            document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
+    document.getElementById('pdf-code').innerText = o.code;
+    document.getElementById('pdf-location').innerText = `${o.wilayat} (${o.region || ''})`;
+    document.getElementById('pdf-issue-date').innerText = o.issueDate || '---';
+    document.getElementById('pdf-duration').innerText = o.durationDays || '---';
+    document.getElementById('pdf-target-date').innerText = o.targetCompletionDate || '---';
+    document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
 
-            const sigs = o.signatures || {};
-            document.getElementById('sig-eng').innerText = sigs.projectEngineer ? "✔ Approved (Project Engineer)" : "Status: Pending";
-            document.getElementById('sig-head').innerText = sigs.headSection ? "✔ Approved (Head Section)" : "Status: Pending";
-            document.getElementById('sig-director').innerText = sigs.director ? "✔ Approved & Signed (Director of Roads)" : "Status: Pending";
+    const sigs = o.signatures || {};
+    
+    // عرض صورة التوقيع إذا كان معتمداً، أو النص في حال كان بانتظار الاعتماد
+    document.getElementById('sig-eng').innerHTML = sigs.projectEngineer 
+        ? `<img src="رابط_توقيع_المهندس.png" class="h-10 mx-auto my-1" alt="Engineer Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
+        : "Status: Pending";
 
-            const pdfTbody = document.getElementById('pdf-items-body');
-            pdfTbody.innerHTML = o.items.map(item => `
-                <tr class="border-b border-slate-900">
-                    <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo}</td>
-                    <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
-                    <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
-                    <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice).toFixed(3)}</td>
-                    <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty).toFixed(2)}</td>
-                    <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total).toFixed(3)}</td>
-                </tr>
-            `).join('');
+    document.getElementById('sig-head').innerHTML = sigs.headSection 
+        ? `<img src="رابط_توقيع_رئيس_القسم.png" class="h-10 mx-auto my-1" alt="Head Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
+        : "Status: Pending";
 
-            const element = document.getElementById('pdf-template');
-            element.classList.remove('hidden');
-            html2pdf().set({ margin: [8, 8, 8, 8], filename: `WorkOrder_${o.code}.pdf`, html2canvas: { scale: 2 } }).from(element).save().then(() => {
-                element.classList.add('hidden');
-                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
-            });
-        }
+    document.getElementById('sig-director').innerHTML = sigs.director 
+        ? `<img src="رابط_توقيع_المدير.png" class="h-12 mx-auto my-1" alt="Director Signature"><span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` 
+        : "Status: Pending";
 
+    // بقية كود رسم الجدول وتصدير الـ PDF...
+    const pdfTbody = document.getElementById('pdf-items-body');
+    pdfTbody.innerHTML = o.items.map(item => `
+        <tr class="border-b border-slate-900">
+            <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo}</td>
+            <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
+            <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
+            <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice).toFixed(3)}</td>
+            <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty).toFixed(2)}</td>
+            <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total).toFixed(3)}</td>
+        </tr>
+    `).join('');
+
+    const element = document.getElementById('pdf-template');
+    element.classList.remove('hidden');
+    html2pdf().set({ margin: [8, 8, 8, 8], filename: `WorkOrder_${o.code}.pdf`, html2canvas: { scale: 2 } }).from(element).save().then(() => {
+        element.classList.add('hidden');
+        showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
+    });
+}
         async function deleteOrder(firestoreId) {
             if (currentUser.role !== 'employee' && currentUser.role !== 'director') {
                 showToast(currentLang === 'ar' ? 'الصلاحية غير متاحة للحذف' : 'Permission denied for deletion', true); return;
