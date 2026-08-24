@@ -834,90 +834,50 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-       function generatePDF(firestoreId) {
+        function generatePDF(firestoreId) {
     const o = globalOrders.find(item => item.firestoreId === firestoreId);
     if (!o) return;
 
-    // تعبئة البيانات الأساسية للوثيقة
-    document.getElementById('pdf-code').innerText = o.code || '---';
-    document.getElementById('pdf-location').innerText = `${o.wilayat || ''} (${o.region || ''})`;
+    document.getElementById('pdf-code').innerText = o.code;
+    document.getElementById('pdf-location').innerText = `${o.wilayat} (${o.region || ''})`;
     document.getElementById('pdf-issue-date').innerText = o.issueDate || '---';
     document.getElementById('pdf-duration').innerText = o.durationDays || '---';
     document.getElementById('pdf-target-date').innerText = o.targetCompletionDate || '---';
     document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
 
-    // استخراج بيانات التواقيع المحفوظة داخل أمر العمل
     const sigs = o.signatures || {};
     
-    // 1. توقيع مهندس المشروع (Project Engineer)
-    const engContainer = document.getElementById('sig-eng');
-    if (sigs.projectEngineer && sigs.projectEngineer.signatureUrl) {
-        engContainer.innerHTML = `
-            <img src="${sigs.projectEngineer.signatureUrl}" class="max-h-12 w-auto mx-auto my-1 object-contain" alt="Engineer Signature">
-            <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved</span>
-            <span class="text-[9px] text-slate-600 block">${sigs.projectEngineer.name || ''}</span>
-        `;
-    } else {
-        engContainer.innerHTML = `<span class="text-slate-400 text-[10px] italic">Status: Pending</span>`;
-    }
+    // عرض صورة التوقيع إذا كان معتمداً، أو النص في حال كان بانتظار الاعتماد
+    document.getElementById('sig-eng').innerHTML = sigs.projectEngineer 
+        ? `<img src="https://mtcit988.github.io/rowadcommand/eng.png" class="h-10 mx-auto my-1" alt="Engineer Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
+        : "Status: Pending";
 
-    // 2. توقيع رئيس القسم (Head of Section)
-    const headContainer = document.getElementById('sig-head');
-    if (sigs.headSection && sigs.headSection.signatureUrl) {
-        headContainer.innerHTML = `
-            <img src="${sigs.headSection.signatureUrl}" class="max-h-12 w-auto mx-auto my-1 object-contain" alt="Head Signature">
-            <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved</span>
-            <span class="text-[9px] text-slate-600 block">${sigs.headSection.name || ''}</span>
-        `;
-    } else {
-        headContainer.innerHTML = `<span class="text-slate-400 text-[10px] italic">Status: Pending</span>`;
-    }
+    document.getElementById('sig-head').innerHTML = sigs.headSection 
+        ? `<img src="https://mtcit988.github.io/rowadcommand/head.png" class="h-10 mx-auto my-1" alt="Head Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
+        : "Status: Pending";
 
-    // 3. توقيع المدير (Director) مع ضمان ظهور المسمى الوظيفي الثابت دائماً
-    const directorContainer = document.getElementById('sig-director');
-    if (sigs.director && sigs.director.signatureUrl) {
-        directorContainer.innerHTML = `
-            <img src="${sigs.director.signatureUrl}" class="max-h-14 w-auto mx-auto my-1 object-contain" alt="Director Signature">
-            <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved & Signed</span>
-            <div class="font-bold text-[10px] text-slate-800 mt-1">Director of Governorate Road Department</div>
-            <span class="text-[9px] text-slate-600 block">${sigs.director.name || ''}</span>
-        `;
-    } else {
-        directorContainer.innerHTML = `
-            <span class="text-slate-400 text-[10px] italic block mb-1">Status: Pending</span>
-            <div class="font-bold text-[10px] text-slate-800">Director of Governorate Road Department</div>
-        `;
-    }
+    document.getElementById('sig-director').innerHTML = sigs.director 
+        ? `<img src="رابط_توقيع_المدير.png" class="h-12 mx-auto my-1" alt="Director Signature"><span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` 
+        : "Status: Pending";
 
-    // تعبئة بنود أمر العمل في الجدول
+    // بقية كود رسم الجدول وتصدير الـ PDF...
     const pdfTbody = document.getElementById('pdf-items-body');
-    if (pdfTbody && o.items) {
-        pdfTbody.innerHTML = o.items.map(item => `
-            <tr class="border-b border-slate-900">
-                <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo}</td>
-                <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
-                <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
-                <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice || 0).toFixed(3)}</td>
-                <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty || 0).toFixed(2)}</td>
-                <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total || 0).toFixed(3)}</td>
-            </tr>
-        `).join('');
-    }
+    pdfTbody.innerHTML = o.items.map(item => `
+        <tr class="border-b border-slate-900">
+            <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo}</td>
+            <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
+            <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
+            <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice).toFixed(3)}</td>
+            <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty).toFixed(2)}</td>
+            <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total).toFixed(3)}</td>
+        </tr>
+    `).join('');
 
-    // إظهار قالب الـ PDF وتوليده عبر مكتبة html2pdf
     const element = document.getElementById('pdf-template');
-    if (!element) return;
-    
     element.classList.remove('hidden');
-    html2pdf().set({ 
-        margin: [8, 8, 8, 8], 
-        filename: `WorkOrder_${o.code || 'Document'}.pdf`, 
-        html2canvas: { scale: 2, useCORS: true } 
-    }).from(element).save().then(() => {
+    html2pdf().set({ margin: [8, 8, 8, 8], filename: `WorkOrder_${o.code}.pdf`, html2canvas: { scale: 2 } }).from(element).save().then(() => {
         element.classList.add('hidden');
-        if (typeof showToast === 'function') {
-            showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
-        }
+        showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
     });
 }
         async function deleteOrder(firestoreId) {
