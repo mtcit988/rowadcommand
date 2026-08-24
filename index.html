@@ -846,9 +846,19 @@
             document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
 
             const sigs = o.signatures || {};
-            document.getElementById('sig-eng').innerText = sigs.projectEngineer ? "✔ Approved (Project Engineer)" : "Status: Pending";
-            document.getElementById('sig-head').innerText = sigs.headSection ? "✔ Approved (Head Section)" : "Status: Pending";
-            document.getElementById('sig-director').innerText = sigs.director ? "✔ Approved & Signed (Director of Roads)" : "Status: Pending";
+            
+            // عرض صورة التوقيع بجانب الحالة لكل مسؤول وظيفي
+            document.getElementById('sig-eng').innerHTML = sigs.projectEngineer 
+                ? `<img src="https://example.com/signatures/engineer.png" class="h-10 mx-auto my-1 object-contain" alt="Engineer Signature"><span class="text-emerald-700 text-[10px] font-bold">✔ Approved (Project Engineer)</span>` 
+                : `<span class="text-slate-500 text-[10px] font-normal">Status: Pending</span>`;
+
+            document.getElementById('sig-head').innerHTML = sigs.headSection 
+                ? `<img src="https://example.com/signatures/head.png" class="h-10 mx-auto my-1 object-contain" alt="Head Signature"><span class="text-emerald-700 text-[10px] font-bold">✔ Approved (Head Section)</span>` 
+                : `<span class="text-slate-500 text-[10px] font-normal">Status: Pending</span>`;
+
+            document.getElementById('sig-director').innerHTML = sigs.director 
+                ? `<img src="https://example.com/signatures/director.png" class="h-12 mx-auto my-1 object-contain" alt="Director Signature"><span class="text-emerald-700 text-[10px] font-bold">✔ Approved & Signed (Director)</span>` 
+                : `<span class="text-slate-500 text-[10px] font-normal">Status: Pending</span>`;
 
             const pdfTbody = document.getElementById('pdf-items-body');
             pdfTbody.innerHTML = o.items.map(item => `
