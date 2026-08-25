@@ -849,15 +849,15 @@
     
     // عرض صورة التوقيع إذا كان معتمداً، أو النص في حال كان بانتظار الاعتماد
     document.getElementById('sig-eng').innerHTML = sigs.projectEngineer 
-        ? `<img src="https://mtcit988.github.io/rowadcommand/eng.png" class="h-10 mx-auto my-1" alt="Engineer Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
+        ? `<img src="https://mtcit988.github.io/rowadcommand/eng.png" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Engineer Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
         : "Status: Pending";
 
     document.getElementById('sig-head').innerHTML = sigs.headSection 
-        ? `<img src="https://mtcit988.github.io/rowadcommand/head.png" class="h-10 mx-auto my-1" alt="Head Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
+        ? `<img src="https://mtcit988.github.io/rowadcommand/head.png" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Head Signature"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
         : "Status: Pending";
 
     document.getElementById('sig-director').innerHTML = sigs.director 
-        ? `<img src="رابط_توقيع_المدير.png" class="h-12 mx-auto my-1" alt="Director Signature"><span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` 
+        ? `<img src="رابط_توقيع_المدير.png" class="h-12 mx-auto my-1" style="height: 40px; width: auto;" alt="Director Signature"><span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` 
         : "Status: Pending";
 
     // بقية كود رسم الجدول وتصدير الـ PDF...
