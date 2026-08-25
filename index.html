@@ -87,11 +87,10 @@
             <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
             <div>
                 <h1 id="h-title" class="text-base md:text-lg font-bold">نظام إدارة العمليات الطرقية (ROWADS)</h1>
-                <p id="h-subtitle" class="text-xs text-slate-300">دائرة الطرق بمحافظة البريمي</p>
+                <p id="h-subtitle" class="text-xs text-slate-300">مديرية الطرق بمحافظة البريمي</p>
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-            <!-- Language Switcher Toggle -->
             <button onclick="toggleLanguage()" class="bg-blue-900 hover:bg-blue-800 border border-blue-700 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2" title="Switch Language / تبديل اللغة">
                 <i class="fa-solid fa-globe"></i> <span id="lang-btn-text">English</span>
             </button>
@@ -284,38 +283,38 @@
         </div>
     </div>
 
-    <!-- Official Printable PDF Template -->
-    <div id="pdf-template" dir="ltr" class="hidden bg-white p-8 max-w-3xl mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+    <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
+    <div id="pdf-template" dir="ltr" class="hidden bg-white p-6 max-w-[210mm] mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
         <div class="text-center text-[11px] font-bold text-purple-800 mb-1" style="font-family: 'Amiri', serif;">بسم الله الرحمن الرحيم</div>
-        <div class="flex justify-between items-center border-b pb-4 mb-4">
+        <div class="flex justify-between items-center border-b pb-3 mb-3">
             <div class="text-left font-serif text-[11px] text-purple-900 leading-snug w-1/3">
-                <p class="italic text-[13px] font-bold">Sultanate of Oman</p>
+                <p class="italic text-[12px] font-bold">Sultanate of Oman</p>
                 <p class="font-sans text-[10px]">Ministry of Transport, Communications<br>& Information Technology</p>
                 <p class="font-serif italic text-[11px]">Muscat</p>
             </div>
             <div class="w-1/3 flex justify-center">
-                <svg class="w-16 h-16 text-red-700 fill-current" viewBox="0 0 100 100">
+                <svg class="w-14 h-14 text-red-700 fill-current" viewBox="0 0 100 100">
                     <path d="M50 10 L54 22 L66 22 L56 30 L60 42 L50 34 L40 42 L44 30 L34 22 L46 22 Z" />
                     <path d="M25 65 Q50 85 75 65" fill="none" stroke="currentColor" stroke-width="4"/>
                     <path d="M30 35 L70 65 M30 65 L70 35" stroke="currentColor" stroke-width="3"/>
                 </svg>
             </div>
             <div class="text-right font-semibold text-[12px] text-purple-900 leading-snug w-1/3" style="font-family: 'Amiri', serif;">
-                <p class="text-[14px] font-black">سلطنة عمان</p>
-                <p class="text-[11px] font-bold">وزارة النقل والاتصالات وتقنية المعلومات</p>
-                <p class="text-[12px] font-bold">مسقط</p>
+                <p class="text-[13px] font-black">سلطنة عمان</p>
+                <p class="text-[10px] font-bold">وزارة النقل والاتصالات وتقنية المعلومات</p>
+                <p class="text-[11px] font-bold">مسقط</p>
             </div>
         </div>
 
-        <div class="text-center font-bold text-red-700 space-y-0.5 mb-4 uppercase text-[10.5px]">
+        <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
             <p class="tracking-wide">SULTANATE OF OMAN</p>
             <p>MINISTRY OF TRANSPORT, COMMUNICATIONS & INFORMATION TECHNOLOGY</p>
             <p>DIRECTORATE GENERAL OF ROAD & LAND TRANSPORT</p>
-            <p class="text-red-700 mt-2 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
+            <p class="text-red-700 mt-1 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
             <p class="text-red-700 font-black">( AL BURAIMI GOVERNORATE ) - ( FOR 5 YEARS )</p>
         </div>
 
-        <div class="grid grid-cols-12 gap-y-1 text-[11px] font-bold mb-4 border-t border-b py-2 text-slate-900 text-left">
+        <div class="grid grid-cols-12 gap-y-1 text-[10px] font-bold mb-3 border-t border-b py-2 text-slate-900 text-left">
             <div class="col-span-4 uppercase">WORK ORDER NO</div>
             <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
             <div class="col-span-4 uppercase">DATE OF ISSUE</div>
@@ -328,47 +327,47 @@
             <div class="col-span-8" id="pdf-location">---</div>
         </div>
 
-        <p class="font-bold text-[11px] mb-2 text-left">List of work as per the Work Order No.</p>
+        <p class="font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
 
-        <table class="w-full border-collapse border border-slate-900 text-[10px] mb-6 text-left">
+        <table class="w-full border-collapse border border-slate-900 text-[9px] mb-4 text-left">
             <thead>
                 <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-900">
-                    <th class="border border-slate-900 p-1.5 w-20 text-center">Item No.</th>
-                    <th class="border border-slate-900 p-1.5 text-center">Description</th>
-                    <th class="border border-slate-900 p-1.5 w-16 text-center">Unit</th>
-                    <th class="border border-slate-900 p-1.5 w-20 text-center">Unit rate<br>(OMR)</th>
-                    <th class="border border-slate-900 p-1.5 w-20 text-center">Estimated<br>Quantity</th>
-                    <th class="border border-slate-900 p-1.5 w-24 text-center">Amount (OMR)</th>
+                    <th class="border border-slate-900 p-1 w-16 text-center">Item No.</th>
+                    <th class="border border-slate-900 p-1 text-center">Description</th>
+                    <th class="border border-slate-900 p-1 w-12 text-center">Unit</th>
+                    <th class="border border-slate-900 p-1 w-16 text-center">Unit rate<br>(OMR)</th>
+                    <th class="border border-slate-900 p-1 w-16 text-center">Estimated<br>Quantity</th>
+                    <th class="border border-slate-900 p-1 w-20 text-center">Amount (OMR)</th>
                 </tr>
             </thead>
             <tbody id="pdf-items-body" class="divide-y divide-slate-900"></tbody>
             <tfoot>
                 <tr class="font-black border-t border-slate-900">
-                    <td colspan="5" class="border border-slate-900 p-1.5 text-right uppercase">Total cost of the maintenance order (R.O)</td>
-                    <td class="border border-slate-900 p-1.5 text-center text-slate-950 font-black text-[11px]" id="pdf-grand-total">0.000</td>
+                    <td colspan="5" class="border border-slate-900 p-1 text-right uppercase">Total cost of the maintenance order (R.O)</td>
+                    <td class="border border-slate-900 p-1 text-center text-slate-950 font-black text-[10px]" id="pdf-grand-total">0.000</td>
                 </tr>
             </tfoot>
         </table>
 
         <!-- Signatures Block -->
-        <div class="pt-6 border-t border-slate-300">
-            <div class="grid grid-cols-2 gap-8 text-center font-bold text-[11px] mb-12">
+        <div class="pt-4 border-t border-slate-300">
+            <div class="grid grid-cols-2 gap-6 text-center font-bold text-[10px] mb-8">
                 <div>
                     <p>Project Engineer / Road Supervisor</p>
-                    <p class="text-slate-500 text-[10px] font-normal" id="sig-eng">Status: Pending</p>
+                    <p class="text-slate-500 text-[9px] font-normal" id="sig-eng">Status: Pending</p>
                 </div>
                 <div>
                     <p>Head Section of Road Maintenance</p>
-                    <p class="text-slate-500 text-[10px] font-normal" id="sig-head">Status: Pending</p>
+                    <p class="text-slate-500 text-[9px] font-normal" id="sig-head">Status: Pending</p>
                 </div>
             </div>
-            <div class="text-center font-bold text-[11px]">
+            <div class="text-center font-bold text-[10px]">
                 <p>Director of Governorate Road Department</p>
-                <p class="text-slate-500 text-[10px] font-normal" id="sig-director">Status: Pending</p>
+                <p class="text-slate-500 text-[9px] font-normal" id="sig-director">Status: Pending</p>
             </div>
         </div>
 
-        <div class="mt-12 pt-2 border-t border-red-700 flex justify-between items-center text-[9px] text-red-800 font-bold">
+        <div class="mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold">
             <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
             <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
         </div>
@@ -443,7 +442,7 @@
                 loginPassLbl: 'كلمة المرور:',
                 loginBtn: 'دخول للنظام',
                 hTitle: 'نظام إدارة العمليات الطرقية (ROWADS)',
-                hSub: 'دائرة الطرق بمحافظة البريمي',
+                hSub: 'مديرية الطرق بمحافظة البريمي',
                 createBtn: 'إنشاء أمر عمل جديد',
                 statTotal: 'إجمالي أوامر العمل',
                 statOpen: 'مفتوح / قيد التنفيذ',
@@ -641,7 +640,6 @@
             });
         }
 
-        // [تم الإصلاح هنا]: تحديث وعرض مواقع أوامر العمل على خريطة Leaflet
         function updateMapMarkers() {
             if (!markersGroup) return;
             markersGroup.clearLayers();
@@ -912,55 +910,58 @@
             const engContainer = document.getElementById('sig-eng');
             if (creator && creator.signatureUrl) {
                 engContainer.innerHTML = `
-                    <img src="${creator.signatureUrl}" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Engineer Signature" crossorigin="anonymous">
-                    <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved (${creator.name})</span>
+                    <img src="${creator.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Engineer Signature" crossorigin="anonymous">
+                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved (${creator.name})</span>
                 `;
             } else {
-                engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[10px]">✔ Approved</span>` : "Status: Pending";
+                engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[9px]">✔ Approved</span>` : "Status: Pending";
             }
 
             const headContainer = document.getElementById('sig-head');
             if (headInfo && headInfo.signatureUrl) {
                 headContainer.innerHTML = `
-                    <img src="${headInfo.signatureUrl}" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Head Signature" crossorigin="anonymous">
-                    <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved (${headInfo.name})</span>
+                    <img src="${headInfo.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Head Signature" crossorigin="anonymous">
+                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved (${headInfo.name})</span>
                 `;
             } else {
-                headContainer.innerHTML = (sigs.headSection || headInfo) ? `<span class="text-emerald-700 text-[10px]">✔ Approved (${headInfo?.name || 'Head Section'})</span>` : "Status: Pending";
+                headContainer.innerHTML = (sigs.headSection || headInfo) ? `<span class="text-emerald-700 text-[9px]">✔ Approved (${headInfo?.name || 'Head Section'})</span>` : "Status: Pending";
             }
 
             const directorContainer = document.getElementById('sig-director');
             if (directorInfo && directorInfo.signatureUrl) {
                 directorContainer.innerHTML = `
-                    <img src="${directorInfo.signatureUrl}" class="h-12 mx-auto my-1" style="height: 40px; width: auto;" alt="Director Signature" crossorigin="anonymous">
-                    <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved & Signed (${directorInfo.name})</span>
+                    <img src="${directorInfo.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Director Signature" crossorigin="anonymous">
+                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved & Signed (${directorInfo.name})</span>
                 `;
             } else {
-                directorContainer.innerHTML = (sigs.director || directorInfo) ? `<span class="text-emerald-700 text-[10px]">✔ Approved & Signed (${directorInfo?.name || 'Director'})</span>` : "Status: Pending";
+                directorContainer.innerHTML = (sigs.director || directorInfo) ? `<span class="text-emerald-700 text-[9px]">✔ Approved & Signed (${directorInfo?.name || 'Director'})</span>` : "Status: Pending";
             }
 
             const pdfTbody = document.getElementById('pdf-items-body');
             pdfTbody.innerHTML = o.items.map(item => `
                 <tr class="border-b border-slate-900">
-                    <td class="border border-slate-900 p-1.5 text-center font-mono">${item.itemNo}</td>
-                    <td class="border border-slate-900 p-1.5 text-left">${item.desc}</td>
-                    <td class="border border-slate-900 p-1.5 text-center">${item.unit}</td>
-                    <td class="border border-slate-900 p-1.5 text-center">${(item.unitPrice).toFixed(3)}</td>
-                    <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.qty).toFixed(2)}</td>
-                    <td class="border border-slate-900 p-1.5 text-center font-bold">${(item.total).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-mono">${item.itemNo}</td>
+                    <td class="border border-slate-900 p-1 text-left">${item.desc}</td>
+                    <td class="border border-slate-900 p-1 text-center">${item.unit}</td>
+                    <td class="border border-slate-900 p-1 text-center">${(item.unitPrice).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${(item.qty).toFixed(2)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${(item.total).toFixed(3)}</td>
                 </tr>
             `).join('');
 
             const element = document.getElementById('pdf-template');
             element.classList.remove('hidden');
             
+            // ضبط التصدير ليكون متوافقاً تماماً مع ورقة A4 وبقياسات محسنة لصفحة واحدة
             html2pdf().set({ 
-                margin: [8, 8, 8, 8], 
+                margin: [10, 10, 10, 10], 
                 filename: `WorkOrder_${o.code}.pdf`, 
-                html2canvas: { scale: 2, useCORS: true } 
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
-                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
+                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بقياس A4 بنجاح' : 'Official Work Order A4 PDF generated successfully');
             });
         }
 
@@ -988,7 +989,6 @@
             document.getElementById('stat-cost').innerText = globalOrders.reduce((acc, r) => acc + Number(r.cost || 0), 0).toFixed(3) + ' ' + currencySymbol;
             document.getElementById('orders-count').innerText = globalOrders.length + (currentLang === 'ar' ? ' أمر عمل' : ' Orders');
 
-            // [تم الإصلاح هنا]: استدعاء دالة تحديث علامات الخريطة مع كل عملية إعادة رسم
             updateMapMarkers();
 
             const tbody = document.getElementById('orders-table');
