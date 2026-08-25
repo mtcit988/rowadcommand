@@ -46,7 +46,11 @@
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 350px; width: 100%; z-index: 1; }
         *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
-        @media print { .no-print { display: none !important; } }
+        @media print { 
+            .no-print { display: none !important; } 
+            .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        }
+        .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
@@ -349,8 +353,8 @@
             </tfoot>
         </table>
 
-        <!-- Signatures Block -->
-        <div class="pt-4 border-t border-slate-300">
+        <!-- Signatures Block (Protected from splitting across pages) -->
+        <div class="pt-4 border-t border-slate-300 page-break-inside-avoid">
             <div class="grid grid-cols-2 gap-6 text-center font-bold text-[10px] mb-8">
                 <div>
                     <p>Project Engineer / Road Supervisor</p>
@@ -367,7 +371,7 @@
             </div>
         </div>
 
-        <div class="mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold">
+        <div class="mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid">
             <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
             <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
         </div>
@@ -1082,7 +1086,6 @@
             const element = document.getElementById('pdf-template');
             element.classList.remove('hidden');
             
-            // ضبط التصدير ليكون متوافقاً تماماً مع ورقة A4 وبقياسات محسنة لصفحة واحدة
             html2pdf().set({ 
                 margin: [10, 10, 10, 10], 
                 filename: `WorkOrder_${o.code}.pdf`, 
