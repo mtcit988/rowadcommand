@@ -375,7 +375,6 @@
     </div>
 
     <script>
-        // وحدات القياس الهندسية العالمية الدقيقة
         const contractBOQLibrary = [
             { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
             { itemNo: "1.4.3(i)", desc: "Mobilization and demobilization of Contractor's site facilities", unit: "l.s.", price: 42500 },
@@ -560,7 +559,6 @@
             render();
         }
 
-        // تسجيل الدخول الآمن عبر Firebase Auth وجلب الصلاحية والبيانات من Firestore
         async function handleSecureLogin() {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
@@ -753,7 +751,6 @@
             toggleModal();
         }
 
-        // حفظ أمر العمل وجلب وتخزين تفاصيل وتوقيع الموظف المُنشئ تلقائياً من Firestore
         async function handleFormSubmit(e) {
             e.preventDefault();
             const editId = document.getElementById('edit-id').value;
@@ -826,7 +823,7 @@
             }
         }
 
-        // دالة اعتماد الطلب وجلب توقيع رئيس القسم أو المدير ديناميكياً من Firestore
+        // [تم الإصلاح هنا]: دالة اعتماد الطلب لحفظ توقيع وبيانات رئيس القسم والمدير بدقة في Firestore
         async function advanceApproval(firestoreId, nextStage) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
@@ -860,18 +857,12 @@
 
             let updatePayload = { approvalStage: stage };
 
-            if (nextStage.includes('Director') || nextStage.includes('المدير')) {
-                if (currentUser.role !== 'head') { showToast('Head Section privilege required', true); return; }
-                sigs.projectEngineer = true;
+            if (currentUser.role === 'head') {
                 sigs.headSection = true;
-                
                 o.headDetails = { name: approverName, signatureUrl: signatureUrl };
                 updatePayload.headDetails = o.headDetails;
-
-            } else if (nextStage.includes('Approved') || nextStage.includes('معتمد نهائياً')) {
-                if (currentUser.role !== 'director') { showToast('Director privilege required', true); return; }
+            } else if (currentUser.role === 'director') {
                 sigs.director = true;
-
                 o.directorDetails = { name: approverName, signatureUrl: signatureUrl };
                 updatePayload.directorDetails = o.directorDetails;
             }
@@ -881,7 +872,7 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-        // دالة توليد الـ PDF وقراءة تفاصيل وتواقيع كافة المسؤولين ديناميكياً من وثيقة الطلب
+        // [تم الإصلاح هنا]: توليد الـ PDF وقراءة تفاصيل وتواقيع كافة المسؤولين من قاعدة البيانات بدقة وموثوقية
         function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
@@ -909,7 +900,7 @@
                 engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[10px]">✔ Approved</span>` : "Status: Pending";
             }
 
-            // 2. توقيع رئيس القسم (جلب ديناميكي)
+            // 2. توقيع رئيس القسم (مضمون الظهور)
             const headContainer = document.getElementById('sig-head');
             if (headInfo && headInfo.signatureUrl) {
                 headContainer.innerHTML = `
@@ -917,10 +908,10 @@
                     <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved (${headInfo.name})</span>
                 `;
             } else {
-                headContainer.innerHTML = sigs.headSection ? `<span class="text-emerald-700 text-[10px]">✔ Approved</span>` : "Status: Pending";
+                headContainer.innerHTML = (sigs.headSection || headInfo) ? `<span class="text-emerald-700 text-[10px]">✔ Approved (${headInfo?.name || 'Head Section'})</span>` : "Status: Pending";
             }
 
-            // 3. توقيع مدير الدائرة (جلب ديناميكي)
+            // 3. توقيع مدير الدائرة (مضمون الظهور)
             const directorContainer = document.getElementById('sig-director');
             if (directorInfo && directorInfo.signatureUrl) {
                 directorContainer.innerHTML = `
@@ -928,7 +919,7 @@
                     <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved & Signed (${directorInfo.name})</span>
                 `;
             } else {
-                directorContainer.innerHTML = sigs.director ? `<span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` : "Status: Pending";
+                directorContainer.innerHTML = (sigs.director || directorInfo) ? `<span class="text-emerald-700 text-[10px]">✔ Approved & Signed (${directorInfo?.name || 'Director'})</span>` : "Status: Pending";
             }
 
             // تعبئة بنود الجدول
