@@ -454,7 +454,7 @@
                 thCode: 'رمز الأمر', thLoc: 'الولاية والمنطقة', thBy: 'أنشئ بواسطة', thCost: 'التكلفة الإجمالية', thStatus: 'حالة العمل', thStage: 'مرحلة الاعتماد', thActions: 'الإجراءات والموافقات',
                 modalTitleCreate: 'إنشاء أمر عمل جديد وحصر مواد العقد',
                 lblCode: 'رمز أمر العمل *', lblWilayat: 'الولاية *', lblRegion: 'المنطقة / الشارع *',
-                lblIssue: 'تاريخ الإصدار *', lblDur: 'المدة (بالأيام) *', lblTarget: 'تاريخ الإنجاز المستهدف *',
+                lblIssue: 'تاريخ الإصدار *', lblDuration: 'المدة (بالأيام) *', lblTarget: 'تاريخ الإنجاز المستهدف *',
                 lblContractor: 'المقاول', lblPriority: 'الأولوية', lblWStatus: 'حالة العمل *',
                 boqLegend: 'بنود العقد المعتمدة', addBoqBtn: 'إضافة بند',
                 thBoqItem: 'اختر بند العقد', thBoqUnit: 'الوحدة', thBoqQty: 'الكمية', thBoqRate: 'السعر الفردي', thBoqTotal: 'الإجمالي', thBoqDel: 'حذف',
@@ -641,6 +641,28 @@
             });
         }
 
+        // [تم الإصلاح هنا]: تحديث وعرض مواقع أوامر العمل على خريطة Leaflet
+        function updateMapMarkers() {
+            if (!markersGroup) return;
+            markersGroup.clearLayers();
+
+            globalOrders.forEach(o => {
+                if (o.lat && o.lng) {
+                    const marker = L.marker([o.lat, o.lng]);
+                    const popupContent = `
+                        <div dir="${currentLang==='ar'?'rtl':'ltr'}" style="font-family: 'Tajawal', sans-serif; text-align: ${currentLang==='ar'?'right':'left'};">
+                            <strong>${o.code}</strong><br>
+                            ${o.wilayat} - ${o.region || ''}<br>
+                            <b>${currentLang==='ar'?'الحالة:':'Status:'}</b> ${o.status || 'مفتوح'}<br>
+                            <b>${currentLang==='ar'?'التكلفة:':'Cost:'}</b> ${(o.cost || 0).toFixed(3)} OMR
+                        </div>
+                    `;
+                    marker.bindPopup(popupContent);
+                    markersGroup.addLayer(marker);
+                }
+            });
+        }
+
         function setupFirebaseRealtime() {
             if (!window.firestoreTools) { setTimeout(setupFirebaseRealtime, 200); return; }
             const { collection, onSnapshot, query } = window.firestoreTools;
@@ -823,7 +845,6 @@
             }
         }
 
-        // [تم الإصلاح هنا]: دالة اعتماد الطلب لحفظ توقيع وبيانات رئيس القسم والمدير بدقة في Firestore
         async function advanceApproval(firestoreId, nextStage) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
@@ -872,7 +893,6 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-        // [تم الإصلاح هنا]: توليد الـ PDF وقراءة تفاصيل وتواقيع كافة المسؤولين من قاعدة البيانات بدقة وموثوقية
         function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
@@ -889,7 +909,6 @@
             const headInfo = o.headDetails;
             const directorInfo = o.directorDetails;
 
-            // 1. توقيع المهندس المُنشئ
             const engContainer = document.getElementById('sig-eng');
             if (creator && creator.signatureUrl) {
                 engContainer.innerHTML = `
@@ -900,7 +919,6 @@
                 engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[10px]">✔ Approved</span>` : "Status: Pending";
             }
 
-            // 2. توقيع رئيس القسم (مضمون الظهور)
             const headContainer = document.getElementById('sig-head');
             if (headInfo && headInfo.signatureUrl) {
                 headContainer.innerHTML = `
@@ -911,7 +929,6 @@
                 headContainer.innerHTML = (sigs.headSection || headInfo) ? `<span class="text-emerald-700 text-[10px]">✔ Approved (${headInfo?.name || 'Head Section'})</span>` : "Status: Pending";
             }
 
-            // 3. توقيع مدير الدائرة (مضمون الظهور)
             const directorContainer = document.getElementById('sig-director');
             if (directorInfo && directorInfo.signatureUrl) {
                 directorContainer.innerHTML = `
@@ -922,7 +939,6 @@
                 directorContainer.innerHTML = (sigs.director || directorInfo) ? `<span class="text-emerald-700 text-[10px]">✔ Approved & Signed (${directorInfo?.name || 'Director'})</span>` : "Status: Pending";
             }
 
-            // تعبئة بنود الجدول
             const pdfTbody = document.getElementById('pdf-items-body');
             pdfTbody.innerHTML = o.items.map(item => `
                 <tr class="border-b border-slate-900">
@@ -971,6 +987,9 @@
             const currencySymbol = currentLang === 'ar' ? 'ر.ع' : 'OMR';
             document.getElementById('stat-cost').innerText = globalOrders.reduce((acc, r) => acc + Number(r.cost || 0), 0).toFixed(3) + ' ' + currencySymbol;
             document.getElementById('orders-count').innerText = globalOrders.length + (currentLang === 'ar' ? ' أمر عمل' : ' Orders');
+
+            // [تم الإصلاح هنا]: استدعاء دالة تحديث علامات الخريطة مع كل عملية إعادة رسم
+            updateMapMarkers();
 
             const tbody = document.getElementById('orders-table');
             if (globalOrders.length === 0) {
