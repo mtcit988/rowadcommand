@@ -483,7 +483,7 @@
                 thCode: 'WO Code', thLoc: 'Wilayat & Area', thBy: 'Created By', thCost: 'Total Cost', thStatus: 'Work Status', thStage: 'Approval Stage', thActions: 'Actions & Approvals',
                 modalTitleCreate: 'Create New Work Order & BOQ Quantities',
                 lblCode: 'WO Reference Code *', lblWilayat: 'Wilayat *', lblRegion: 'Area / Street *',
-                lblIssue: 'Work Order Issue Date *', lblDur: 'Duration (in Days) *', lblTarget: 'Target Completion Date *',
+                lblIssue: 'Work Order Issue Date *', lblDuration: 'Duration (in Days) *', lblTarget: 'Target Completion Date *',
                 lblContractor: 'Contractor', lblPriority: 'Priority', lblWStatus: 'Work Status *',
                 boqLegend: 'Approved Contract BOQ Items', addBoqBtn: 'Add BOQ Item',
                 thBoqItem: 'Select Contract Item', thBoqUnit: 'Unit', thBoqQty: 'Qty', thBoqRate: 'Unit Rate (OMR)', thBoqTotal: 'Total (OMR)', thBoqDel: 'Delete',
@@ -560,7 +560,7 @@
             render();
         }
 
-        // تسجيل الدخول الآمن عبر Firebase Auth وجلب الصلاحية من Firestore
+        // تسجيل الدخول الآمن عبر Firebase Auth وجلب الصلاحية والبيانات من Firestore
         async function handleSecureLogin() {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
@@ -579,7 +579,7 @@
                 const userSnap = await getDoc(userDocRef);
 
                 if (userSnap.exists()) {
-                    currentUser = { uid: uid, ...userSnap.data() }; // حفظ الـ uid ضمن البيانات الحالية
+                    currentUser = { uid: uid, ...userSnap.data() };
                     localStorage.setItem('rowads_auth_user', JSON.stringify(currentUser));
                     applyRolePermissions();
                     document.getElementById('login-modal').classList.add('hidden');
@@ -792,10 +792,9 @@
                     await updateDoc(doc(window.db, "orders", editId), payload);
                     showToast(currentLang === 'ar' ? 'تم تحديث أمر العمل بنجاح' : 'Work Order updated successfully');
                 } else {
-                    // جلب بيانات الموظف الحالي وتوقيعه من جدول users في الفايربيس لضمان استقلاليته
                     const authUser = window.auth.currentUser;
                     let engineerName = currentUser.name;
-                    let signatureUrl = "";
+                    let signatureUrl = currentUser.signatureUrl || "";
 
                     if (authUser) {
                         const userDocRef = doc(window.db, "users", authUser.uid);
@@ -803,11 +802,10 @@
                         if (userSnap.exists()) {
                             const uData = userSnap.data();
                             engineerName = uData.name || engineerName;
-                            signatureUrl = uData.signatureUrl || ""; // جلب رابط التوقيع الخاص بالموظف
+                            signatureUrl = uData.signatureUrl || signatureUrl;
                         }
                     }
 
-                    // تخزين كائن المُنشئ الكامل داخل أمر العمل
                     payload.createdBy = engineerName;
                     payload.creatorDetails = {
                         uid: authUser ? authUser.uid : '',
@@ -828,6 +826,7 @@
             }
         }
 
+        // دالة اعتماد الطلب وجلب توقيع رئيس القسم أو المدير ديناميكياً من Firestore
         async function advanceApproval(firestoreId, nextStage) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
@@ -841,24 +840,48 @@
                 return;
             }
 
-            const { updateDoc, doc } = window.firestoreTools;
+            const { updateDoc, doc, getDoc } = window.firestoreTools;
             let sigs = o.signatures || { projectEngineer: false, headSection: false, director: false };
             let stage = nextStage;
+
+            const authUser = window.auth.currentUser;
+            let signatureUrl = currentUser.signatureUrl || "";
+            let approverName = currentUser.name;
+
+            if (authUser) {
+                const userDocRef = doc(window.db, "users", authUser.uid);
+                const userSnap = await getDoc(userDocRef);
+                if (userSnap.exists()) {
+                    const uData = userSnap.data();
+                    signatureUrl = uData.signatureUrl || signatureUrl;
+                    approverName = uData.name || approverName;
+                }
+            }
+
+            let updatePayload = { approvalStage: stage };
 
             if (nextStage.includes('Director') || nextStage.includes('المدير')) {
                 if (currentUser.role !== 'head') { showToast('Head Section privilege required', true); return; }
                 sigs.projectEngineer = true;
                 sigs.headSection = true;
+                
+                o.headDetails = { name: approverName, signatureUrl: signatureUrl };
+                updatePayload.headDetails = o.headDetails;
+
             } else if (nextStage.includes('Approved') || nextStage.includes('معتمد نهائياً')) {
                 if (currentUser.role !== 'director') { showToast('Director privilege required', true); return; }
                 sigs.director = true;
+
+                o.directorDetails = { name: approverName, signatureUrl: signatureUrl };
+                updatePayload.directorDetails = o.directorDetails;
             }
 
-            await updateDoc(doc(window.db, "orders", firestoreId), { approvalStage: stage, signatures: sigs });
+            updatePayload.signatures = sigs;
+            await updateDoc(doc(window.db, "orders", firestoreId), updatePayload);
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-        // دالة توليد الـ PDF وجلب التوقيع الدينامعي الخاص بالموظف الذي أنشأ الطلب
+        // دالة توليد الـ PDF وقراءة تفاصيل وتواقيع كافة المسؤولين ديناميكياً من وثيقة الطلب
         function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
@@ -871,9 +894,11 @@
             document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
 
             const sigs = o.signatures || {};
-            const creator = o.creatorDetails; // جلب تفاصيل المُنشئ المحفوظة مسبقاً في أمر العمل
-            
-            // 1. عرض توقيع المهندس المُنشئ ديناميكياً بناءً على من أنشأ الطلب حصراً
+            const creator = o.creatorDetails;
+            const headInfo = o.headDetails;
+            const directorInfo = o.directorDetails;
+
+            // 1. توقيع المهندس المُنشئ
             const engContainer = document.getElementById('sig-eng');
             if (creator && creator.signatureUrl) {
                 engContainer.innerHTML = `
@@ -881,21 +906,30 @@
                     <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved (${creator.name})</span>
                 `;
             } else {
-                // دعم إضافي للطلبات القديمة التي لم تخزن الكائن بالطريقة الجديدة
-                engContainer.innerHTML = sigs.projectEngineer 
-                    ? `<img src="https://mtcit988.github.io/rowadcommand/eng.png" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Engineer Signature" crossorigin="anonymous"><span class="text-emerald-700 text-[10px]">✔ Approved (${o.createdBy || 'Engineer'})</span>` 
-                    : "Status: Pending";
+                engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[10px]">✔ Approved</span>` : "Status: Pending";
             }
 
-            // 2. توقيع رئيس القسم
-            document.getElementById('sig-head').innerHTML = sigs.headSection 
-                ? `<img src="https://mtcit988.github.io/rowadcommand/head.png" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Head Signature" crossorigin="anonymous"><span class="text-emerald-700 text-[10px]">✔ Approved</span>` 
-                : "Status: Pending";
+            // 2. توقيع رئيس القسم (جلب ديناميكي)
+            const headContainer = document.getElementById('sig-head');
+            if (headInfo && headInfo.signatureUrl) {
+                headContainer.innerHTML = `
+                    <img src="${headInfo.signatureUrl}" class="h-10 mx-auto my-1" style="height: 40px; width: auto;" alt="Head Signature" crossorigin="anonymous">
+                    <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved (${headInfo.name})</span>
+                `;
+            } else {
+                headContainer.innerHTML = sigs.headSection ? `<span class="text-emerald-700 text-[10px]">✔ Approved</span>` : "Status: Pending";
+            }
 
-            // 3. توقيع مدير الدائرة
-            document.getElementById('sig-director').innerHTML = sigs.director 
-                ? `<img src="رابط_توقيع_المدير.png" class="h-12 mx-auto my-1" style="height: 40px; width: auto;" alt="Director Signature" crossorigin="anonymous"><span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` 
-                : "Status: Pending";
+            // 3. توقيع مدير الدائرة (جلب ديناميكي)
+            const directorContainer = document.getElementById('sig-director');
+            if (directorInfo && directorInfo.signatureUrl) {
+                directorContainer.innerHTML = `
+                    <img src="${directorInfo.signatureUrl}" class="h-12 mx-auto my-1" style="height: 40px; width: auto;" alt="Director Signature" crossorigin="anonymous">
+                    <span class="text-emerald-700 text-[10px] block font-bold">✔ Approved & Signed (${directorInfo.name})</span>
+                `;
+            } else {
+                directorContainer.innerHTML = sigs.director ? `<span class="text-emerald-700 text-[10px]">✔ Approved & Signed</span>` : "Status: Pending";
+            }
 
             // تعبئة بنود الجدول
             const pdfTbody = document.getElementById('pdf-items-body');
@@ -916,7 +950,7 @@
             html2pdf().set({ 
                 margin: [8, 8, 8, 8], 
                 filename: `WorkOrder_${o.code}.pdf`, 
-                html2canvas: { scale: 2, useCORS: true } // تفعيل useCORS لجلب صور التواقيع الخارجية بسلاسة دون أخطاء
+                html2canvas: { scale: 2, useCORS: true } 
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
                 showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بنجاح' : 'Official Work Order PDF generated successfully');
@@ -1012,7 +1046,6 @@
             initMap(); 
             setupFirebaseRealtime();
 
-            // فحص حالة المصادقة النشطة حالياً عبر Firebase Auth
             setTimeout(() => {
                 window.auth.onAuthStateChanged(async (user) => {
                     if (user) {
