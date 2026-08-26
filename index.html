@@ -1046,30 +1046,27 @@
             if (creator && creator.signatureUrl) {
                 engContainer.innerHTML = `
                     <img src="${creator.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Engineer Signature" crossorigin="anonymous">
-                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved (${creator.name})</span>
                 `;
             } else {
-                engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[9px]">✔ Approved</span>` : "Status: Pending";
             }
 
             const headContainer = document.getElementById('sig-head');
             if (headInfo && headInfo.signatureUrl) {
                 headContainer.innerHTML = `
                     <img src="${headInfo.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Head Signature" crossorigin="anonymous">
-                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved (${headInfo.name})</span>
+                   
                 `;
             } else {
-                headContainer.innerHTML = (sigs.headSection || headInfo) ? `<span class="text-emerald-700 text-[9px]">✔ Approved (${headInfo?.name || 'Head Section'})</span>` : "Status: Pending";
             }
 
             const directorContainer = document.getElementById('sig-director');
             if (directorInfo && directorInfo.signatureUrl) {
                 directorContainer.innerHTML = `
                     <img src="${directorInfo.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Director Signature" crossorigin="anonymous">
-                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved & Signed (${directorInfo.name})</span>
+                  
                 `;
             } else {
-                directorContainer.innerHTML = (sigs.director || directorInfo) ? `<span class="text-emerald-700 text-[9px]">✔ Approved & Signed (${directorInfo?.name || 'Director'})</span>` : "Status: Pending";
+               
             }
 
             const pdfTbody = document.getElementById('pdf-items-body');
@@ -1089,10 +1086,10 @@
             
             // ضبط التصدير بمسافات هوامش محسنة وتفعيل منع تقطيع التواقيع
             html2pdf().set({ 
-                margin: [2, 4, 2, 4], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
+                margin: [4, 4, 4, 4], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
                 filename: `WorkOrder_${o.code}.pdf`, 
                 image: { type: 'png', quality: 0.98 },
-                html2canvas: { scale: 3, useCORS: true, letterRendering: true }, 
+                html2canvas: { scale: 8, useCORS: true, letterRendering: true }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
