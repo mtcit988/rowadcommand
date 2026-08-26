@@ -42,15 +42,25 @@
         window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc, signInWithEmailAndPassword, signOut };
     </script>
 
-    <style> 
+   <style> 
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 350px; width: 100%; z-index: 1; }
         *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
         @media print { 
             .no-print { display: none !important; } 
-            .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
         }
-        .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        /* --- التعديل هنا لحل مشكلة اختفاء التواقيع --- */
+        .page-break-inside-avoid { 
+            break-inside: avoid !important; 
+            page-break-inside: avoid !important; 
+            display: table !important; /* هذا السطر السحري يمنع مكتبة html2pdf من إخفاء العنصر عند التمدد */
+            width: 100%;
+        }
+        /* لمنع انقسام صفوف الجدول بين صفحتين */
+        #pdf-items-body tr {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
@@ -353,7 +363,7 @@
             </tfoot>
         </table>
 
-        <!-- Signatures Block (Protected from splitting across pages) -->
+       
         <!-- Signatures Block -->
 <div class="pt-3 border-t border-slate-300 mt-4" style="page-break-inside: avoid; break-inside: avoid;">
     <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
