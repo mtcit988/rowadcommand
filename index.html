@@ -623,13 +623,13 @@
             }
         };
 
-        function toggleLanguage() {
+         toggleLanguage() {
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
             localStorage.setItem('rowads_lang_unified', currentLang);
             applyLanguage();
         }
 
-        function applyLanguage() {
+         applyLanguage() {
             const t = translations[currentLang];
             const root = document.getElementById('html-root');
             root.setAttribute('lang', t.htmlLang);
@@ -690,7 +690,7 @@
             render();
         }
 
-        async function handleSecureLogin() {
+        async  function handleSecureLogin(event) {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value.trim();
 
