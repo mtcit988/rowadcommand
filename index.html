@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" conhtmtent="width=device-width, initial-scale=1.0">
     <title>منصة ROWADS - نظام إدارة العمليات الطرقية</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -91,7 +91,7 @@
             <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
             <div>
                 <h1 id="h-title" class="text-base md:text-lg font-bold">نظام إدارة العمليات الطرقية (ROWADS)</h1>
-                <p id="h-subtitle" class="text-xs text-slate-300">مديرية الطرق بمحافظة البريمي</p>
+                <p id="h-subtitle" class="text-xs text-slate-300">دائرة الطرق بمحافظة البريمي</p>
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-3">
@@ -576,7 +576,7 @@
                 loginPassLbl: 'كلمة المرور:',
                 loginBtn: 'دخول للنظام',
                 hTitle: 'نظام إدارة العمليات الطرقية (ROWADS)',
-                hSub: 'مديرية الطرق بمحافظة البريمي',
+                hSub: 'دائرة الطرق بمحافظة البريمي',
                 createBtn: 'إنشاء أمر عمل جديد',
                 statTotal: 'إجمالي أوامر العمل',
                 statOpen: 'مفتوح / قيد التنفيذ',
@@ -1086,7 +1086,7 @@
 const element = document.getElementById('pdf-template');
    element.classList.remove('hidden');
    
-   html2pdf().set({ 
+   ().set({ 
        margin: [10, 10, 10, 10], // هوامش متساوية بالمليمتر (أعلى، يمين، أسفل، يسار) لتجنب الالتصاق
        filename: `WorkOrder_${o.code}.pdf`, 
        image: { type: 'jpeg', quality: 0.98 },
