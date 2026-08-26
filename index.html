@@ -42,29 +42,15 @@
         window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc, signInWithEmailAndPassword, signOut };
     </script>
 
-   <style> 
+    <style> 
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 350px; width: 100%; z-index: 1; }
-        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 3px; }
+        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
         @media print { 
             .no-print { display: none !important; } 
+            .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
         }
-        .page-break-inside-avoid { 
-            break-inside: avoid !important; 
-            page-break-inside: avoid !important; 
-            display: table !important; 
-            width: 100%;
-        }
-      #pdf-items-body tr {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-    }
-    .signatures-container {
-        display: block !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-        page-break-before: auto;
-    }
+        .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
@@ -367,29 +353,22 @@
             </tfoot>
         </table>
 
-       
+        <!-- Signatures Block (Protected from splitting across pages) -->
         <!-- Signatures Block -->
-<div class="pt-4 border-t border-slate-300 mt-6 signatures-container">
-    <div class="flex justify-between text-center font-bold text-[10px] mb-6">
-        <div class="w-1/2 px-2">
-            <p class="text-slate-800">Project Engineer / Road Supervisor</p>
-            <div class="h-12 flex items-center justify-center my-1 border border-dashed border-slate-300 rounded bg-slate-50" id="sig-eng">
-                Status: Pending
-            </div>
+<div class="pt-3 border-t border-slate-300 mt-4" style="page-break-inside: avoid; break-inside: avoid;">
+    <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
+        <div>
+            <p>Project Engineer / Road Supervisor</p>
+            <div class="h-10 flex items-center justify-center my-0.5" id="sig-eng">Status: Pending</div>
         </div>
-        <div class="w-1/2 px-2">
-            <p class="text-slate-800">Head Section of Road Maintenance</p>
-            <div class="h-12 flex items-center justify-center my-1 border border-dashed border-slate-300 rounded bg-slate-50" id="sig-head">
-                Status: Pending
-            </div>
+        <div>
+            <p>Head Section of Road Maintenance</p>
+            <div class="h-10 flex items-center justify-center my-0.5" id="sig-head">Status: Pending</div>
         </div>
     </div>
-
-    <div class="w-2/3 mx-auto text-center font-bold text-[10px]">
-        <p class="text-slate-800">Director of Governorate Road Department</p>
-        <div class="h-12 flex items-center justify-center my-1 border border-dashed border-slate-300 rounded bg-slate-50" id="sig-director">
-            Status: Pending
-        </div>
+    <div class="text-center font-bold text-[9px]">
+        <p>Director of Governorate Road Department</p>
+        <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
     </div>
 </div>
 
@@ -1067,27 +1046,30 @@
             if (creator && creator.signatureUrl) {
                 engContainer.innerHTML = `
                     <img src="${creator.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Engineer Signature" crossorigin="anonymous">
+                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved (${creator.name})</span>
                 `;
             } else {
+                engContainer.innerHTML = sigs.projectEngineer ? `<span class="text-emerald-700 text-[9px]">✔ Approved</span>` : "Status: Pending";
             }
 
             const headContainer = document.getElementById('sig-head');
             if (headInfo && headInfo.signatureUrl) {
                 headContainer.innerHTML = `
                     <img src="${headInfo.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Head Signature" crossorigin="anonymous">
-                   
+                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved (${headInfo.name})</span>
                 `;
             } else {
+                headContainer.innerHTML = (sigs.headSection || headInfo) ? `<span class="text-emerald-700 text-[9px]">✔ Approved (${headInfo?.name || 'Head Section'})</span>` : "Status: Pending";
             }
 
             const directorContainer = document.getElementById('sig-director');
             if (directorInfo && directorInfo.signatureUrl) {
                 directorContainer.innerHTML = `
                     <img src="${directorInfo.signatureUrl}" class="h-8 mx-auto my-0.5" style="height: 30px; width: auto;" alt="Director Signature" crossorigin="anonymous">
-                  
+                    <span class="text-emerald-700 text-[9px] block font-bold">✔ Approved & Signed (${directorInfo.name})</span>
                 `;
             } else {
-               
+                directorContainer.innerHTML = (sigs.director || directorInfo) ? `<span class="text-emerald-700 text-[9px]">✔ Approved & Signed (${directorInfo?.name || 'Director'})</span>` : "Status: Pending";
             }
 
             const pdfTbody = document.getElementById('pdf-items-body');
@@ -1104,12 +1086,14 @@
 
            const element = document.getElementById('pdf-template');
             element.classList.remove('hidden');
-                        html2pdf().set({ 
-                margin: [20, 20, 20, 20], 
+            
+            // ضبط التصدير بمسافات هوامش محسنة وتفعيل منع تقطيع التواقيع
+            html2pdf().set({ 
+                margin: [5, 8, 5, 8], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
                 filename: `WorkOrder_${o.code}.pdf`, 
-                image: { type: 'jpg', quality: 0.98 },
-                html2canvas: { scale: 6, useCORS: true, letterRendering: false }, 
-               jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
                 showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بقياس A4 بنجاح' : 'Official Work Order A4 PDF generated successfully');
