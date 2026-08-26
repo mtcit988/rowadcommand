@@ -1105,10 +1105,10 @@
            const element = document.getElementById('pdf-template');
             element.classList.remove('hidden');
                         html2pdf().set({ 
-                margin: [3.4, 3.4, 3.5, 3.4], 
+                margin: [20, 20, 20, 20], 
                 filename: `WorkOrder_${o.code}.pdf`, 
-                image: { type: 'png', quality: 0.98 },
-                html2canvas: { scale: 1, useCORS: true, letterRendering: true }, 
+                image: { type: 'jpg', quality: 0.98 },
+                html2canvas: { scale: 6, useCORS: true, letterRendering: false }, 
                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
