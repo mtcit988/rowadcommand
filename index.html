@@ -1089,10 +1089,10 @@
             
             // ضبط التصدير بمسافات هوامش محسنة وتفعيل منع تقطيع التواقيع
             html2pdf().set({ 
-                margin: [5, 8, 5, 8], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
+                margin: [2, 4, 2, 4], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
                 filename: `WorkOrder_${o.code}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
+                image: { type: 'png', quality: 0.98 },
+                html2canvas: { scale: 3, useCORS: true, letterRendering: true }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
