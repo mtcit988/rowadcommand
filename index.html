@@ -1086,7 +1086,7 @@
             
             // ضبط التصدير بمسافات هوامش محسنة وتفعيل منع تقطيع التواقيع
             html2pdf().set({ 
-                margin: [4, 4, 4, 4], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
+                margin: [10, 10, 10, 10], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
                 filename: `WorkOrder_${o.code}.pdf`, 
                 image: { type: 'png', quality: 0.98 },
                 html2canvas: { scale: 8, useCORS: true, letterRendering: true }, 
