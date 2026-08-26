@@ -44,7 +44,7 @@
 
    <style> 
         body { font-family: 'Tajawal', sans-serif; }
-        #map { height: 350px; width: 100%; z-index: 1; }
+        #map { height: 600px; width: 100%; z-index: 1; }
         *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
         @media print { 
             .no-print { display: none !important; } 
@@ -1105,14 +1105,13 @@
 
            const element = document.getElementById('pdf-template');
             element.classList.remove('hidden');
-            
-            // ضبط التصدير بمسافات هوامش محسنة وتفعيل منع تقطيع التواقيع
-            html2pdf().set({ 
-                margin: [10, 10, 10, 10], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
+                        html2pdf().set({ 
+                margin: [10, 10, 10, 10], 
                 filename: `WorkOrder_${o.code}.pdf`, 
                 image: { type: 'png', quality: 0.98 },
                 html2canvas: { scale: 8, useCORS: true, letterRendering: true }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+               jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
             }).from(element).save().then(() => {
                 element.classList.add('hidden');
                 showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بقياس A4 بنجاح' : 'Official Work Order A4 PDF generated successfully');
