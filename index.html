@@ -328,22 +328,24 @@
 
     <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
    
-      <div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
-        <div class="flex justify-between items-center border-b pb-3 mb-3">
-            <div class="text-left font-serif text-[11px] text-purple-900 leading-snug w-1/3">
-                <p class="italic text-[12px] font-bold">Sultanate of Oman</p>
-                <p class="font-sans text-[10px]">Ministry of Transport, Communications<br>& Information Technology</p>
-                <p class="font-serif italic text-[11px]">Muscat</p>
-            </div>
-            <div class="w-1/3 flex justify-center">
-                <img src="https://mtcit988.github.io/rowadcommand/logo2.svg" alt="شعار الوزارة" class="max-h-16 w-auto object-contain">
-            </div>
-            <div class="text-right font-semibold text-[12px] text-purple-900 leading-snug w-1/3" style="font-family: 'Amiri', serif;">
-                <p class="text-[13px] font-black">سلطنة عمان</p>
-                <p class="text-[10px] font-bold">وزارة النقل والاتصالات وتقنية المعلومات</p>
-                <p class="text-[11px] font-bold">مسقط</p>
-            </div>
+<div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+    <div class="flex justify-between items-center border-b pb-3 mb-3">
+        <!-- الجهة اليسرى: النص الإنجليزي SVG -->
+        <div class="w-1/3 flex justify-start items-center">
+            <img src="https://mtcit988.github.io/rowadcommand/nameminen.svg" alt="Ministry Name English" class="h-10 w-auto object-contain">
         </div>
+        
+        <!-- المنتصف: شعار الوزارة SVG -->
+        <div class="w-1/3 flex justify-center items-center">
+            <img src="https://mtcit988.github.io/rowadcommand/logo2.svg" alt="شعار الوزارة" class="max-h-16 w-auto object-contain">
+        </div>
+        
+        <!-- الجهة اليمنى: النص العربي SVG -->
+        <div class="w-1/3 flex justify-end items-center">
+            <img src="https://mtcit988.github.io/rowadcommand/nameminar.svg" alt="اسم الوزارة بالعربي" class="h-12 w-auto object-contain">
+        </div>
+    </div>
+</div>
 
         <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
             <p class="tracking-wide">SULTANATE OF OMAN</p>
