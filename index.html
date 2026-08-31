@@ -47,8 +47,17 @@
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 350px; width: 100%; z-index: 1; }
         *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
-        @media print { 
-            .no-print { display: none !important; } 
+        @media print {
+    body {
+        background: white !important;
+    }
+    .no-print { 
+        display: none !important; 
+    }
+        @page {
+        size: A4 portrait;
+        margin: 20mm 10mm 20mm 10mm; /* ترك مساحة في الأعلى والأسفل */
+    }
             .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
             .pdf-document {
                 width: 194mm !important;
@@ -71,6 +80,26 @@
             box-sizing: border-box;
             direction: ltr;
         }
+.pdf-header-fixed {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 18mm;
+        background: white;
+        border-bottom: 1px solid #991b1b;
+        z-index: 1000;
+    }
+        .pdf-footer-fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 12mm;
+        background: white;
+        border-top: 1px solid #991b1b;
+        z-index: 1000;
+    }
         .pdf-document table {
             page-break-inside: auto;
             break-inside: auto;
@@ -90,6 +119,10 @@
         .pdf-document img {
             max-width: 100%;
         }
+        .pdf-body-content {
+        margin-top: 20mm !important;
+        margin-bottom: 15mm !important;
+    }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
