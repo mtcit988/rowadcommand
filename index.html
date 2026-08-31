@@ -44,52 +44,59 @@
     </script>
 
     <style> 
-        body { font-family: 'Tajawal', sans-serif; }
-        #map { height: 350px; width: 100%; z-index: 1; }
-        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
-        @media print { 
-            .no-print { display: none !important; } 
-            .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-            .pdf-document {
-                width: 194mm !important;
-                max-width: none !important;
-                height: auto !important;
-                min-height: 0 !important;
-                overflow: visible !important;
-                margin: 0 !important;
-                box-sizing: border-box !important;
-                direction: ltr !important;
-            }
-        }
-        .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-        .pdf-document {
-            width: 194mm;
-            max-width: 194mm;
-            height: auto;
-            min-height: 0;
-            overflow: visible;
-            box-sizing: border-box;
-            direction: ltr;
-        }
-        .pdf-document table {
-            page-break-inside: auto;
-            break-inside: auto;
-        }
-        .pdf-document thead {
-            display: table-header-group;
-        }
-        .pdf-document tfoot {
-            display: table-row-group;
-        }
-        .pdf-document tr,
-        .pdf-document .pdf-signatures,
-        .pdf-document .pdf-footer {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-        .pdf-document img {
-            max-width: 100%;
-        }
+       @page {
+    size: A4;
+    margin-top: 40mm;    /* مساحة مخصصة لترويسة الـ SVG العلوية */
+    margin-bottom: 45mm; /* مساحة مخصصة لحجم تذييل النصوص والتوقيعات السفلي */
+    margin-left: 15mm;
+    margin-right: 15mm;
+}
+
+@media print {
+    body {
+        font-family: 'Cairo', Tahoma, sans-serif;
+        color: #000;
+        background: #fff;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* 1. تثبيت الترويسة (SVG) في أعلى كل صفحة */
+    .print-header-svg {
+        position: fixed;
+        top: -38mm;
+        left: 0;
+        right: 0;
+        width: 100%;
+        text-align: center;
+        z-index: 9999;
+    }
+    .print-header-svg img {
+        width: 100%;
+        max-height: 35mm;
+        object-fit: contain;
+    }
+
+    /* 2. تثبيت التذييل (النصوص والتوقيعات العادية) في أسفل كل صفحة */
+    .print-footer-html {
+        position: fixed;
+        bottom: -42mm; /* يتم دفعه ليستقر في الهامش السفلي المحجوز بدقة */
+        left: 0;
+        right: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 9999;
+        border-top: 1px solid #cbd5e1;
+        padding-top: 5px;
+    }
+
+    /* تنسيق تكرار جداول البنود وتجنب قطع الأسطر */
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    thead { display: table-header-group; }
+
+    .no-print, .btn, .sidebar, .navbar { display: none !important; }
+}
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
