@@ -328,12 +328,12 @@
 
     <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
    
-<div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] min-h-[297mm] mx-auto text-slate-900 font-sans text-[11px] relative border flex flex-col justify-between">
-    
+<div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] min-h-[297mm] mx-auto text-slate-900 font-sans text-[11px] relative border">    
     <!-- قسم المحتوى العلوي والجدول والتواقيع -->
+    <div class="print-container">
     <div>
-        <!-- Header Block -->
-        <div class="flex justify-between items-center border-b pb-3 mb-3">
+       <div class="print-header-fixed">
+        <div class="flex justify-between items-center pb-2">
             <div class="w-1/3 flex justify-start items-center">
                 <img src="https://mtcit988.github.io/rowadcommand/nameminen.svg" alt="Ministry Name English" class="h-10 w-auto object-contain">
             </div>
@@ -344,6 +344,7 @@
                 <img src="https://mtcit988.github.io/rowadcommand/nameminar.svg" alt="اسم الوزارة بالعربي" class="h-12 w-auto object-contain">
             </div>
         </div>
+    </div>
 
         <!-- Title Sub-header -->
         <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
@@ -419,12 +420,12 @@
     </div>
 
     <!-- Footer المثبت في الأسفل تماماً -->
-    <div class="pdf-footer pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid mt-auto">
-        <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
-        <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
+  <div class="print-footer-fixed">
+        <div class="pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold">
+            <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
+            <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
+        </div>
     </div>
-</div>
-
     <script>
         const contractBOQLibrary = [
             { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
