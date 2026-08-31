@@ -43,54 +43,98 @@
         window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc, signInWithEmailAndPassword, signOut };
     </script>
 
-    <style> 
-        body { font-family: 'Tajawal', sans-serif; }
-        #map { height: 350px; width: 100%; z-index: 1; }
-        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
-        @media print { 
-            .no-print { display: none !important; } 
-            .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-            .pdf-document {
-                width: 194mm !important;
-                max-width: none !important;
-                height: auto !important;
-                min-height: 0 !important;
-                overflow: visible !important;
-                margin: 0 !important;
-                box-sizing: border-box !important;
-                direction: ltr !important;
-            }
-        }
+   <style>
+    body { font-family: 'Tajawal', sans-serif; }
+    #map { height: 350px; width: 100%; z-index: 1; }
+    *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
+
+    /* تعريف هوامش الصفحة الثابتة لحجز مساحة للترويسة والتذييل في كل صفحة */
+    @page {
+        size: A4;
+        margin-top: 38mm;    /* مساحة مخصصة لترويسة الـ SVG الثلاثية */
+        margin-bottom: 25mm; /* مساحة مخصصة لتذييل العناوين */
+        margin-left: 10mm;
+        margin-right: 10mm;
+    }
+
+    @media print { 
+        .no-print { display: none !important; } 
         .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        
         .pdf-document {
-            width: 194mm;
-            max-width: 194mm;
-            height: auto;
-            min-height: 0;
-            overflow: visible;
-            box-sizing: border-box;
-            direction: ltr;
+            width: 100% !important;
+            max-width: none !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            direction: ltr !important;
+            border: none !important; /* إزالة الحدود الخارجية للوثيقة عند الطباعة */
+            padding: 0 !important;
         }
-        .pdf-document table {
-            page-break-inside: auto;
-            break-inside: auto;
+
+        /* تثبيت ترويسة الـ SVG الثلاثية في أعلى كل صفحة تلقائياً */
+        .print-header-fixed {
+            position: fixed;
+            top: -35mm; /* ترتفع لتستقر داخل الهامش العلوي المحجوز */
+            left: 0;
+            right: 0;
+            height: 30mm;
+            background-color: #fff;
+            z-index: 9999;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
         }
-        .pdf-document thead {
-            display: table-header-group;
+
+        /* تثبيت تذييل النصوص في أسفل كل صفحة تماماً */
+        .print-footer-fixed {
+            position: fixed;
+            bottom: -22mm; /* تنزل لتستقر داخل الهامش السفلي المحجوز */
+            left: 0;
+            right: 0;
+            height: 18mm;
+            background-color: #fff;
+            z-index: 9999;
         }
-        .pdf-document tfoot {
-            display: table-row-group;
-        }
-        .pdf-document tr,
-        .pdf-document .pdf-signatures,
-        .pdf-document .pdf-footer {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-        .pdf-document img {
-            max-width: 100%;
-        }
-    </style>
+    }
+
+    .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+    
+    .pdf-document {
+        width: 194mm;
+        max-width: 194mm;
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+        box-sizing: border-box;
+        direction: ltr;
+    }
+    
+    .pdf-document table {
+        page-break-inside: auto;
+        break-inside: auto;
+    }
+    
+    .pdf-document thead {
+        display: table-header-group; /* تكرار رأس الجدول في كل صفحة جديدة تلقائياً */
+    }
+    
+    .pdf-document tfoot {
+        display: table-row-group;
+    }
+    
+    .pdf-document tr,
+    .pdf-document .pdf-signatures,
+    .pdf-document .pdf-footer {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    
+    .pdf-document img {
+        max-width: 100%;
+    }
+</style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
