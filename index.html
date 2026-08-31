@@ -368,6 +368,14 @@
             <div class="col-span-8" id="pdf-target-date">---</div>
             <div class="col-span-4 uppercase">LOCATION</div>
             <div class="col-span-8" id="pdf-location">---</div>
+            <div class="col-span-4 uppercase hidden">CONTRACTOR</div>
+            <div class="col-span-8 hidden" id="pdf-contractor">---</div>
+            <div class="col-span-4 uppercase hidden">PRIORITY / STATUS</div>
+            <div class="col-span-8 hidden" id="pdf-priority-status">---</div>
+            <div class="col-span-4 uppercase hidden">CREATED BY</div>
+            <div class="col-span-8 hidden" id="pdf-created-by">---</div>
+            <div class="col-span-4 uppercase hidden">COORDINATES</div>
+            <div class="col-span-8 hidden" id="pdf-coordinates">---</div>
         </div>
 
         <p class="font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
@@ -392,24 +400,23 @@
             </tfoot>
         </table>
 
-        <!-- Signatures Block (Protected from splitting across pages) -->
         <!-- Signatures Block -->
-<div class="pdf-signatures page-break-inside-avoid pt-3 border-t border-slate-300 mt-4">
-    <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
-        <div>
-            <p>Project Engineer / Road Supervisor</p>
-            <div class="h-10 flex items-center justify-center my-0.5" id="sig-eng">Status: Pending</div>
+        <div class="pdf-signatures page-break-inside-avoid pt-3 border-t border-slate-300 mt-4">
+            <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
+                <div>
+                    <p>Project Engineer / Road Supervisor</p>
+                    <div class="h-10 flex items-center justify-center my-0.5" id="sig-eng">Status: Pending</div>
+                </div>
+                <div>
+                    <p>Head Section of Road Maintenance</p>
+                    <div class="h-10 flex items-center justify-center my-0.5" id="sig-head">Status: Pending</div>
+                </div>
+            </div>
+            <div class="text-center font-bold text-[9px]">
+                <p>Director of Governorate Road Department</p>
+                <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
+            </div>
         </div>
-        <div>
-            <p>Head Section of Road Maintenance</p>
-            <div class="h-10 flex items-center justify-center my-0.5" id="sig-head">Status: Pending</div>
-        </div>
-    </div>
-    <div class="text-center font-bold text-[9px]">
-        <p>Director of Governorate Road Department</p>
-        <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
-    </div>
-</div>
 
         <div class="pdf-footer mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid">
             <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
@@ -630,7 +637,7 @@
                 lblIssue: 'تاريخ الإصدار *', lblDuration: 'المدة (بالأيام) *', lblTarget: 'تاريخ الإنجاز المستهدف *',
                 lblContractor: 'المقاول', lblPriority: 'الأولوية', lblWStatus: 'حالة العمل *',
                 boqLegend: 'بنود العقد المعتمدة', addBoqBtn: 'إضافة بند',
-                thBoqItem: 'اختر بند العقد', thBoqUnit: 'الوحدة', thBoqQty: 'الكمية', thBoqRate: 'السعر الفردي', thBoqTotal: 'الإجمالي', thBoqDel: 'حذف',
+                thBoqItem: 'اختر بند العقد', thBoqUnit: 'الوحدة', thBoqQty: 'الكمية', thBoqRate: 'السعر الفردي', thBoqTotal: 'الإجمالي (OMR)', thBoqDel: 'حذف',
                 boqTotalTxt: 'إجمالي التكلفة التقديرية لأمر العمل:',
                 lblLat: 'خط العرض (Latitude)', lblLng: 'خط الطول (Longitude)',
                 cancelBtn: 'إلغاء', saveBtn: 'حفظ أمر العمل'
@@ -1441,7 +1448,8 @@
                     const printTxt = currentLang === 'ar' ? 'طباعة الوثيقة الموقعة' : 'Print Signed PDF';
                     approvalButtons = `<button onclick="generatePDF('${o.firestoreId}')" class="bg-purple-700 hover:bg-purple-800 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-file-pdf"></i> ${printTxt}</button>`;
                 } else {
-                    approvalButtons = `<span class="text-xs text-slate-500">${currentLang==='ar'?'بانتظار المسار':'Draft Created'}</span>`;
+                    const printTxt = currentLang === 'ar' ? 'طباعة الوثيقة الموقعة' : 'Print Signed PDF';
+                    approvalButtons = `<button onclick="generatePDF('${o.firestoreId}')" class="bg-purple-700 hover:bg-purple-800 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-file-pdf"></i> ${printTxt}</button>`;
                 }
 
                 return `
@@ -1469,21 +1477,6 @@
 
             initMap(); 
             setupFirebaseRealtime();
-
-            setTimeout(() => {
-                window.auth.onAuthStateChanged(async (user) => {
-                    if (user) {
-                        const { getDoc, doc } = window.firestoreTools;
-                        const userDocRef = doc(window.db, "users", user.uid);
-                        const userSnap = await getDoc(userDocRef);
-                        if (userSnap.exists()) {
-                            currentUser = { uid: user.uid, ...userSnap.data() };
-                            applyRolePermissions();
-                            document.getElementById('login-modal').classList.add('hidden');
-                        }
-                    }
-                });
-            }, 500);
         };
     </script>
 </body>
