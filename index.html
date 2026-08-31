@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" conhtmtent="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة ROWADS - نظام إدارة العمليات الطرقية</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- html2pdf Library -->
+    <!-- PDF Libraries: loaded separately so both APIs are available globally -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -50,8 +50,46 @@
         @media print { 
             .no-print { display: none !important; } 
             .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+            .pdf-document {
+                width: 194mm !important;
+                max-width: none !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+                direction: ltr !important;
+            }
         }
         .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        .pdf-document {
+            width: 194mm;
+            max-width: 194mm;
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+            box-sizing: border-box;
+            direction: ltr;
+        }
+        .pdf-document table {
+            page-break-inside: auto;
+            break-inside: auto;
+        }
+        .pdf-document thead {
+            display: table-header-group;
+        }
+        .pdf-document tfoot {
+            display: table-row-group;
+        }
+        .pdf-document tr,
+        .pdf-document .pdf-signatures,
+        .pdf-document .pdf-footer {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .pdf-document img {
+            max-width: 100%;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
@@ -289,7 +327,7 @@
     </div>
 
     <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
-    <div id="pdf-template" dir="ltr" class="hidden bg-white p-6 max-w-[210mm] mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+    <div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
         <div class="text-center text-[11px] font-bold text-purple-800 mb-1" style="font-family: 'Amiri', serif;">بسم الله الرحمن الرحيم</div>
         <div class="flex justify-between items-center border-b pb-3 mb-3">
             <div class="text-left font-serif text-[11px] text-purple-900 leading-snug w-1/3">
@@ -356,7 +394,7 @@
 
         <!-- Signatures Block (Protected from splitting across pages) -->
         <!-- Signatures Block -->
-<div class="pt-3 border-t border-slate-300 mt-4" style="page-break-inside: avoid; break-inside: avoid;">
+<div class="pdf-signatures page-break-inside-avoid pt-3 border-t border-slate-300 mt-4">
     <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
         <div>
             <p>Project Engineer / Road Supervisor</p>
@@ -373,7 +411,7 @@
     </div>
 </div>
 
-        <div class="mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid">
+        <div class="pdf-footer mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid">
             <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
             <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
         </div>
@@ -1027,7 +1065,230 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-       function generatePDF(firestoreId) {
+        async function waitForPdfAssets(element) {
+            if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+            }
+
+            const images = Array.from(element.querySelectorAll('img'));
+            await Promise.all(images.map(img => {
+                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+
+                return new Promise(resolve => {
+                    const done = () => {
+                        img.removeEventListener('load', done);
+                        img.removeEventListener('error', done);
+                        resolve();
+                    };
+                    img.addEventListener('load', done, { once: true });
+                    img.addEventListener('error', done, { once: true });
+                    setTimeout(done, 15000);
+                });
+            }));
+
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        }
+
+        function createPdfRenderCopy(sourceElement) {
+            const host = document.createElement('div');
+            host.setAttribute('aria-hidden', 'true');
+            Object.assign(host.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                width: '210mm',
+                minHeight: '297mm',
+                margin: '0',
+                padding: '0',
+                overflow: 'visible',
+                direction: 'ltr',
+                background: '#ffffff',
+                zIndex: '-2147483647'
+            });
+
+            const printable = sourceElement.cloneNode(true);
+            printable.removeAttribute('id');
+            printable.classList.remove('hidden', 'mx-auto', 'max-w-[210mm]');
+            printable.classList.add('pdf-export-copy');
+            Object.assign(printable.style, {
+                display: 'block',
+                position: 'relative',
+                top: '0',
+                left: '0',
+                width: '194mm',
+                maxWidth: '194mm',
+                height: 'auto',
+                minHeight: '0',
+                margin: '0',
+                overflow: 'visible',
+                direction: 'ltr',
+                transform: 'none',
+                boxSizing: 'border-box',
+                background: '#ffffff'
+            });
+
+            host.appendChild(printable);
+            document.body.appendChild(host);
+            return { host, printable };
+        }
+
+        function getPdfProtectedRanges(printable, canvasScale) {
+            const rootRect = printable.getBoundingClientRect();
+            return Array.from(printable.querySelectorAll('tr, .pdf-signatures, .pdf-footer'))
+                .map(node => {
+                    const rect = node.getBoundingClientRect();
+                    return {
+                        start: Math.max(0, Math.floor((rect.top - rootRect.top) * canvasScale)),
+                        end: Math.max(0, Math.ceil((rect.bottom - rootRect.top) * canvasScale))
+                    };
+                })
+                .filter(range => range.end > range.start)
+                .sort((a, b) => a.start - b.start);
+        }
+
+        function calculatePdfPageSlices(totalHeight, idealPageHeight, protectedRanges) {
+            const slices = [];
+            let start = 0;
+            const minimumUsefulPage = Math.floor(idealPageHeight * 0.45);
+
+            while (start < totalHeight) {
+                let end = Math.min(start + idealPageHeight, totalHeight);
+
+                if (end < totalHeight) {
+                    const crossingRange = protectedRanges.find(range =>
+                        range.start > start &&
+                        range.start < end &&
+                        range.end > end
+                    );
+
+                    if (crossingRange && crossingRange.start - start >= minimumUsefulPage) {
+                        end = crossingRange.start;
+                    }
+                }
+
+                if (end <= start) {
+                    end = Math.min(start + idealPageHeight, totalHeight);
+                }
+
+                slices.push({ start, end });
+                start = end;
+            }
+
+            return slices;
+        }
+
+        async function exportElementToA4Pdf(printable, filename) {
+            const html2canvasRenderer = window.html2canvas;
+            if (typeof html2canvasRenderer !== 'function') {
+                throw new Error('PDF_RENDERER_NOT_LOADED');
+            }
+
+            const JsPdfConstructor = window.jspdf && window.jspdf.jsPDF;
+            if (!JsPdfConstructor) {
+                throw new Error('PDF_WRITER_NOT_LOADED');
+            }
+
+            const elementWidth = Math.ceil(printable.getBoundingClientRect().width);
+            const renderScale = Math.max(2, Math.min(3, window.devicePixelRatio || 2));
+            const canvas = await html2canvasRenderer(printable, {
+                scale: renderScale,
+                useCORS: true,
+                allowTaint: false,
+                imageTimeout: 15000,
+                letterRendering: true,
+                backgroundColor: '#ffffff',
+                scrollX: 0,
+                scrollY: 0,
+                width: elementWidth,
+                windowWidth: elementWidth,
+                onclone: clonedDocument => {
+                    clonedDocument.documentElement.setAttribute('dir', 'ltr');
+                    clonedDocument.body.setAttribute('dir', 'ltr');
+                    clonedDocument.documentElement.style.width = `${elementWidth}px`;
+                    clonedDocument.body.style.width = `${elementWidth}px`;
+                    clonedDocument.body.style.margin = '0';
+
+                    const clonedPrintable = clonedDocument.querySelector('.pdf-export-copy');
+                    if (clonedPrintable) {
+                        clonedPrintable.style.position = 'relative';
+                        clonedPrintable.style.top = '0';
+                        clonedPrintable.style.left = '0';
+                        clonedPrintable.style.width = `${elementWidth}px`;
+                        clonedPrintable.style.maxWidth = `${elementWidth}px`;
+                        clonedPrintable.style.margin = '0';
+                        clonedPrintable.style.transform = 'none';
+                        clonedPrintable.style.direction = 'ltr';
+                    }
+                }
+            });
+
+            const pageWidthMm = 210;
+            const pageHeightMm = 297;
+            const marginLeftMm = 8;
+            const marginRightMm = 8;
+            const marginTopMm = 8;
+            const marginBottomMm = 10;
+            const contentWidthMm = pageWidthMm - marginLeftMm - marginRightMm;
+            const contentHeightMm = pageHeightMm - marginTopMm - marginBottomMm;
+            const idealPageHeightPx = Math.max(
+                1,
+                Math.floor(canvas.width * (contentHeightMm / contentWidthMm))
+            );
+            const actualCanvasScale = canvas.width / elementWidth;
+            const protectedRanges = getPdfProtectedRanges(printable, actualCanvasScale);
+            const pageSlices = calculatePdfPageSlices(
+                canvas.height,
+                idealPageHeightPx,
+                protectedRanges
+            );
+
+            const pdf = new JsPdfConstructor({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            pageSlices.forEach((slice, index) => {
+                if (index > 0) pdf.addPage('a4', 'portrait');
+
+                const sliceHeight = slice.end - slice.start;
+                const pageCanvas = document.createElement('canvas');
+                pageCanvas.width = canvas.width;
+                pageCanvas.height = sliceHeight;
+
+                const context = pageCanvas.getContext('2d', { alpha: false });
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+                context.drawImage(
+                    canvas,
+                    0,
+                    slice.start,
+                    canvas.width,
+                    sliceHeight,
+                    0,
+                    0,
+                    canvas.width,
+                    sliceHeight
+                );
+
+                const renderedHeightMm = sliceHeight * contentWidthMm / canvas.width;
+                pdf.addImage(
+                    pageCanvas.toDataURL('image/jpeg', 0.98),
+                    'JPEG',
+                    marginLeftMm,
+                    marginTopMm,
+                    contentWidthMm,
+                    renderedHeightMm,
+                    undefined,
+                    'FAST'
+                );
+            });
+
+            pdf.save(filename);
+        }
+
+        async function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
@@ -1036,6 +1297,13 @@
             document.getElementById('pdf-issue-date').innerText = o.issueDate || '---';
             document.getElementById('pdf-duration').innerText = o.durationDays || '---';
             document.getElementById('pdf-target-date').innerText = o.targetCompletionDate || '---';
+            document.getElementById('pdf-contractor').innerText = o.contractor || '---';
+            document.getElementById('pdf-priority-status').innerText = `${o.priority || '---'} / ${o.status || '---'}`;
+            document.getElementById('pdf-created-by').innerText = o.createdBy || o.creatorDetails?.name || '---';
+            document.getElementById('pdf-coordinates').innerText =
+                Number.isFinite(Number(o.lat)) && Number.isFinite(Number(o.lng))
+                    ? `${Number(o.lat).toFixed(6)}, ${Number(o.lng).toFixed(6)}`
+                    : '---';
             document.getElementById('pdf-grand-total').innerText = (o.cost || 0).toFixed(3);
 
             const sigs = o.signatures || {};
@@ -1074,32 +1342,41 @@
             }
 
             const pdfTbody = document.getElementById('pdf-items-body');
-            pdfTbody.innerHTML = o.items.map(item => `
-                <tr class="border-b border-slate-900">
+            pdfTbody.innerHTML = (o.items || []).map(item => `
+                <tr class="border-b border-slate-900 page-break-inside-avoid">
                     <td class="border border-slate-900 p-1 text-center font-mono">${item.itemNo}</td>
                     <td class="border border-slate-900 p-1 text-left">${item.desc}</td>
                     <td class="border border-slate-900 p-1 text-center">${item.unit}</td>
-                    <td class="border border-slate-900 p-1 text-center">${(item.unitPrice).toFixed(3)}</td>
-                    <td class="border border-slate-900 p-1 text-center font-bold">${(item.qty).toFixed(2)}</td>
-                    <td class="border border-slate-900 p-1 text-center font-bold">${(item.total).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1 text-center">${Number(item.unitPrice || 0).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.qty || 0).toFixed(2)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.total || 0).toFixed(3)}</td>
                 </tr>
             `).join('');
 
             const element = document.getElementById('pdf-template');
-            element.classList.remove('hidden');
-            
-          html2pdf().set({ 
-                margin: [5, 8, 5, 8],
-                filename: `WorkOrder_${o.code}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(element).toPdf().get('pdf').then((pdf) => {
-                pdf.autoPrint();
-                window.open(pdf.output('bloburl'), '_blank');
-                element.classList.add('hidden');
-                showToast(currentLang === 'ar' ? 'تم فتح نافذة الطباعة بنجاح' : 'Print window opened successfully');
-            });
+            const { host, printable } = createPdfRenderCopy(element);
+
+            try {
+                await waitForPdfAssets(printable);
+                await exportElementToA4Pdf(printable, `WorkOrder_${o.code}.pdf`);
+
+                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بقياس A4 بنجاح' : 'Official Work Order A4 PDF generated successfully');
+            } catch (error) {
+                console.error('PDF generation failed:', error);
+                const libraryError = ['PDF_RENDERER_NOT_LOADED', 'PDF_WRITER_NOT_LOADED'].includes(error?.message);
+                showToast(
+                    currentLang === 'ar'
+                        ? (libraryError
+                            ? 'لم تكتمل مكتبات الطباعة. تحقق من الاتصال بالإنترنت ثم حدّث الصفحة وحاول مجددًا.'
+                            : 'تعذر إنشاء ملف PDF. يرجى المحاولة مرة أخرى.')
+                        : (libraryError
+                            ? 'PDF libraries did not finish loading. Check your connection, refresh the page, and try again.'
+                            : 'Unable to generate the PDF. Please try again.'),
+                    true
+                );
+            } finally {
+                host.remove();
+            }
         }
 
         async function deleteOrder(firestoreId) {
