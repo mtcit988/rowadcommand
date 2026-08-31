@@ -1027,7 +1027,7 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
-        function generatePDF(firestoreId) {
+       function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
@@ -1085,21 +1085,22 @@
                 </tr>
             `).join('');
 
-           const element = document.getElementById('pdf-template');
+            const element = document.getElementById('pdf-template');
             element.classList.remove('hidden');
             
-            // ضبط التصدير بمسافات هوامش محسنة وتفعيل منع تقطيع التواقيع
             html2pdf().set({ 
-                margin: [5, 8, 5, 8], // تقليل الهوامش العلوية والسفلية لإعطاء مساحة أوسع
+                margin: [5, 8, 5, 8],
                 filename: `WorkOrder_${o.code}.pdf`, 
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(element).save().then(() => {
+            }).from(element).toPdf().get('pdf').then((pdf) => {
+                pdf.autoPrint();
+                window.open(pdf.output('bloburl'), '_blank');
                 element.classList.add('hidden');
-                showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بقياس A4 بنجاح' : 'Official Work Order A4 PDF generated successfully');
+                showToast(currentLang === 'ar' ? 'تم فتح نافذة الطباعة بنجاح' : 'Print window opened successfully');
             });
-        }
+        }   }
 
         async function deleteOrder(firestoreId) {
             if (currentUser.role !== 'employee' && currentUser.role !== 'director') {
