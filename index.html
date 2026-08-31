@@ -363,9 +363,22 @@
    
 <div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] min-h-[297mm] mx-auto text-slate-900 font-sans text-[11px] relative border flex flex-col justify-between">
     
-    <!-- قسم المحتوى العلوي والجدول والتواقيع -->
-    <div>
-        <!-- Header Block -->
+    <!-- 1. الترويسة الثابتة عند الطباعة -->
+    <div class="pdf-header-fixed hidden print:flex justify-between items-center pb-2">
+        <div class="w-1/3 flex justify-start items-center">
+            <img src="https://mtcit988.github.io/rowadcommand/nameminen.svg" alt="Ministry Name English" class="h-8 w-auto object-contain">
+        </div>
+        <div class="w-1/3 flex justify-center items-center">
+            <img src="https://mtcit988.github.io/rowadcommand/logo2.svg" alt="شعار الوزارة" class="max-h-10 w-auto object-contain">
+        </div>
+        <div class="w-1/3 flex justify-end items-center">
+            <img src="https://mtcit988.github.io/rowadcommand/nameminar.svg" alt="اسم الوزارة بالعربي" class="h-10 w-auto object-contain">
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي مع هامش لمنع التداخل -->
+    <div class="pdf-body-content">
+        <!-- Header Block العادي للعرض المباشر إن أردت -->
         <div class="flex justify-between items-center border-b pb-3 mb-3">
             <div class="w-1/3 flex justify-start items-center">
                 <img src="https://mtcit988.github.io/rowadcommand/nameminen.svg" alt="Ministry Name English" class="h-10 w-auto object-contain">
@@ -399,14 +412,6 @@
             <div class="col-span-8" id="pdf-target-date">---</div>
             <div class="col-span-4 uppercase">LOCATION</div>
             <div class="col-span-8" id="pdf-location">---</div>
-            <div class="col-span-4 uppercase hidden">CONTRACTOR</div>
-            <div class="col-span-8 hidden" id="pdf-contractor">---</div>
-            <div class="col-span-4 uppercase hidden">PRIORITY / STATUS</div>
-            <div class="col-span-8 hidden" id="pdf-priority-status">---</div>
-            <div class="col-span-4 uppercase hidden">CREATED BY</div>
-            <div class="col-span-8 hidden" id="pdf-created-by">---</div>
-            <div class="col-span-4 uppercase hidden">COORDINATES</div>
-            <div class="col-span-8 hidden" id="pdf-coordinates">---</div>
         </div>
 
         <p class="font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
@@ -451,8 +456,14 @@
         </div>
     </div>
 
-    <!-- Footer المثبت في الأسفل تماماً -->
-    <div class="pdf-footer pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid mt-auto">
+    <!-- 2. التذييل الثابت في الأسفل تماماً -->
+    <div class="pdf-footer-fixed hidden print:flex justify-between items-center text-[8px] text-red-800 font-bold px-2">
+        <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
+        <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
+    </div>
+
+    <!-- التذييل العادي المدمج داخل التدفق -->
+    <div class="pdf-footer pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold mt-auto print:hidden">
         <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
         <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
     </div>
