@@ -47,7 +47,7 @@
         body { font-family: 'Tajawal', sans-serif; }
         #map { height: 350px; width: 100%; z-index: 1; }
         *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
-        @media print { 
+         @media print { 
             .no-print { display: none !important; } 
             .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
         }
@@ -55,6 +55,17 @@
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
+
+    <!-- Login Modal (Secure Firebase Auth) -->
+    <div id="login-modal" class="fixed inset-0 bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 space-y-6 shadow-2xl text-center">
+            <div class="space-y-2">
+                <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
+                <h2 id="l-title" class="text-xl font-black text-blue-950">تسجيل الدخول المؤسسي الآمن</h2>
+                <p id="l-desc" class="text-xs text-slate-500">أدخل بيانات الاعتماد الرسمية الخاصة بك</p>
+            </div>
+            <div class="space-y-3 text-right" id="login-form-div">
+                <div>
 
     <!-- Login Modal (Secure Firebase Auth) -->
     <div id="login-modal" class="fixed inset-0 bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
