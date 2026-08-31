@@ -43,16 +43,16 @@
         window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc, signInWithEmailAndPassword, signOut };
     </script>
 
-   <style>
+  <style>
     body { font-family: 'Tajawal', sans-serif; }
     #map { height: 350px; width: 100%; z-index: 1; }
     *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
 
-    /* تعريف هوامش الصفحة الثابتة لحجز مساحة للترويسة والتذييل في كل صفحة */
+    /* ضبط هوامش الصفحة لحجز مساحة دقيقة للترويسة العليا والتذييل السفلي */
     @page {
         size: A4;
-        margin-top: 38mm;    /* مساحة مخصصة لترويسة الـ SVG الثلاثية */
-        margin-bottom: 25mm; /* مساحة مخصصة لتذييل العناوين */
+        margin-top: 42mm;    /* مساحة مخصصة للترويسة العلويّة */
+        margin-bottom: 28mm; /* مساحة مخصصة للتذييل السفلي */
         margin-left: 10mm;
         margin-right: 10mm;
     }
@@ -61,6 +61,12 @@
         .no-print { display: none !important; } 
         .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
         
+        body {
+            background-color: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
         .pdf-document {
             width: 100% !important;
             max-width: none !important;
@@ -70,30 +76,31 @@
             margin: 0 !important;
             box-sizing: border-box !important;
             direction: ltr !important;
-            border: none !important; /* إزالة الحدود الخارجية للوثيقة عند الطباعة */
+            border: none !important;
             padding: 0 !important;
+            background: transparent !important;
         }
 
-        /* تثبيت ترويسة الـ SVG الثلاثية في أعلى كل صفحة تلقائياً */
+        /* تثبيت ترويسة الصفحة في أعلى كل صفحة مطبوعة ضمن الهامش المحجوز */
         .print-header-fixed {
             position: fixed;
-            top: -35mm; /* ترتفع لتستقر داخل الهامش العلوي المحجوز */
+            top: -38mm; 
             left: 0;
             right: 0;
-            height: 30mm;
+            height: 35mm;
             background-color: #fff;
             z-index: 9999;
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 5px;
         }
 
-        /* تثبيت تذييل النصوص في أسفل كل صفحة تماماً */
+        /* تثبيت تذييل الصفحة في أسفل كل صفحة مطبوعة ضمن الهامش المحجوز */
         .print-footer-fixed {
             position: fixed;
-            bottom: -22mm; /* تنزل لتستقر داخل الهامش السفلي المحجوز */
+            bottom: -25mm; 
             left: 0;
             right: 0;
-            height: 18mm;
+            height: 20mm;
             background-color: #fff;
             z-index: 9999;
         }
@@ -117,7 +124,7 @@
     }
     
     .pdf-document thead {
-        display: table-header-group; /* تكرار رأس الجدول في كل صفحة جديدة تلقائياً */
+        display: table-header-group; 
     }
     
     .pdf-document tfoot {
@@ -373,11 +380,10 @@
     <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
    
 <div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] min-h-[297mm] mx-auto text-slate-900 font-sans text-[11px] relative border">    
-    <!-- قسم المحتوى العلوي والجدول والتواقيع -->
-    <div class="print-container">
-    <div>
-       <div class="print-header-fixed">
-        <div class="flex justify-between items-center pb-2">
+    
+    <!-- الترويسة الثابتة في أعلى كل صفحة -->
+    <div class="print-header-fixed">
+        <div class="flex justify-between items-center pb-2 px-4 pt-2">
             <div class="w-1/3 flex justify-start items-center">
                 <img src="https://mtcit988.github.io/rowadcommand/nameminen.svg" alt="Ministry Name English" class="h-10 w-auto object-contain">
             </div>
@@ -390,6 +396,8 @@
         </div>
     </div>
 
+    <!-- المحتوى الأساسي للتقرير -->
+    <div class="print-container">
         <!-- Title Sub-header -->
         <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
             <p class="tracking-wide">SULTANATE OF OMAN</p>
@@ -411,14 +419,6 @@
             <div class="col-span-8" id="pdf-target-date">---</div>
             <div class="col-span-4 uppercase">LOCATION</div>
             <div class="col-span-8" id="pdf-location">---</div>
-            <div class="col-span-4 uppercase hidden">CONTRACTOR</div>
-            <div class="col-span-8 hidden" id="pdf-contractor">---</div>
-            <div class="col-span-4 uppercase hidden">PRIORITY / STATUS</div>
-            <div class="col-span-8 hidden" id="pdf-priority-status">---</div>
-            <div class="col-span-4 uppercase hidden">CREATED BY</div>
-            <div class="col-span-8 hidden" id="pdf-created-by">---</div>
-            <div class="col-span-4 uppercase hidden">COORDINATES</div>
-            <div class="col-span-8 hidden" id="pdf-coordinates">---</div>
         </div>
 
         <p class="font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
@@ -463,13 +463,14 @@
         </div>
     </div>
 
-    <!-- Footer المثبت في الأسفل تماماً -->
-  <div class="print-footer-fixed">
-        <div class="pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold">
+    <!-- التذييل الثابت في أسفل كل صفحة -->
+    <div class="print-footer-fixed">
+        <div class="pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold px-4">
             <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
             <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
         </div>
     </div>
+</div>
     <script>
         const contractBOQLibrary = [
             { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
