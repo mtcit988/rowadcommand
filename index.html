@@ -329,6 +329,7 @@
     <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
    
 <div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] mx-auto text-slate-900 font-sans text-[11px] leading-tight relative border">
+    <!-- Header Block -->
     <div class="flex justify-between items-center border-b pb-3 mb-3">
         <!-- الجهة اليسرى: النص الإنجليزي SVG -->
         <div class="w-1/3 flex justify-start items-center">
@@ -345,82 +346,85 @@
             <img src="https://mtcit988.github.io/rowadcommand/nameminar.svg" alt="اسم الوزارة بالعربي" class="h-12 w-auto object-contain">
         </div>
     </div>
-</div>
 
-        <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
-            <p class="tracking-wide">SULTANATE OF OMAN</p>
-            <p>MINISTRY OF TRANSPORT, COMMUNICATIONS & INFORMATION TECHNOLOGY</p>
-            <p>DIRECTORATE GENERAL OF ROAD & LAND TRANSPORT</p>
-            <p class="text-red-700 mt-1 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
-            <p class="text-red-700 font-black">( AL BURAIMI GOVERNORATE ) - ( FOR 5 YEARS )</p>
-        </div>
+    <!-- Title Sub-header -->
+    <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
+        <p class="tracking-wide">SULTANATE OF OMAN</p>
+        <p>MINISTRY OF TRANSPORT, COMMUNICATIONS & INFORMATION TECHNOLOGY</p>
+        <p>DIRECTORATE GENERAL OF ROAD & LAND TRANSPORT</p>
+        <p class="text-red-700 mt-1 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
+        <p class="text-red-700 font-black">( AL BURAIMI GOVERNORATE ) - ( FOR 5 YEARS )</p>
+    </div>
 
-        <div class="grid grid-cols-12 gap-y-1 text-[10px] font-bold mb-3 border-t border-b py-2 text-slate-900 text-left">
-            <div class="col-span-4 uppercase">WORK ORDER NO</div>
-            <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
-            <div class="col-span-4 uppercase">DATE OF ISSUE</div>
-            <div class="col-span-8" id="pdf-issue-date">---</div>
-            <div class="col-span-4 uppercase">PERIOD</div>
-            <div class="col-span-8" id="pdf-duration">---</div>
-            <div class="col-span-4 uppercase">DATE OF COMP</div>
-            <div class="col-span-8" id="pdf-target-date">---</div>
-            <div class="col-span-4 uppercase">LOCATION</div>
-            <div class="col-span-8" id="pdf-location">---</div>
-            <div class="col-span-4 uppercase hidden">CONTRACTOR</div>
-            <div class="col-span-8 hidden" id="pdf-contractor">---</div>
-            <div class="col-span-4 uppercase hidden">PRIORITY / STATUS</div>
-            <div class="col-span-8 hidden" id="pdf-priority-status">---</div>
-            <div class="col-span-4 uppercase hidden">CREATED BY</div>
-            <div class="col-span-8 hidden" id="pdf-created-by">---</div>
-            <div class="col-span-4 uppercase hidden">COORDINATES</div>
-            <div class="col-span-8 hidden" id="pdf-coordinates">---</div>
-        </div>
+    <!-- Details Grid -->
+    <div class="grid grid-cols-12 gap-y-1 text-[10px] font-bold mb-3 border-t border-b py-2 text-slate-900 text-left">
+        <div class="col-span-4 uppercase">WORK ORDER NO</div>
+        <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
+        <div class="col-span-4 uppercase">DATE OF ISSUE</div>
+        <div class="col-span-8" id="pdf-issue-date">---</div>
+        <div class="col-span-4 uppercase">PERIOD</div>
+        <div class="col-span-8" id="pdf-duration">---</div>
+        <div class="col-span-4 uppercase">DATE OF COMP</div>
+        <div class="col-span-8" id="pdf-target-date">---</div>
+        <div class="col-span-4 uppercase">LOCATION</div>
+        <div class="col-span-8" id="pdf-location">---</div>
+        <div class="col-span-4 uppercase hidden">CONTRACTOR</div>
+        <div class="col-span-8 hidden" id="pdf-contractor">---</div>
+        <div class="col-span-4 uppercase hidden">PRIORITY / STATUS</div>
+        <div class="col-span-8 hidden" id="pdf-priority-status">---</div>
+        <div class="col-span-4 uppercase hidden">CREATED BY</div>
+        <div class="col-span-8 hidden" id="pdf-created-by">---</div>
+        <div class="col-span-4 uppercase hidden">COORDINATES</div>
+        <div class="col-span-8 hidden" id="pdf-coordinates">---</div>
+    </div>
 
-        <p class="font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
+    <p class="font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
 
-        <table class="w-full border-collapse border border-slate-900 text-[9px] mb-4 text-left">
-            <thead>
-                <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-900">
-                    <th class="border border-slate-900 p-1 w-16 text-center">Item No.</th>
-                    <th class="border border-slate-900 p-1 text-center">Description</th>
-                    <th class="border border-slate-900 p-1 w-12 text-center">Unit</th>
-                    <th class="border border-slate-900 p-1 w-16 text-center">Unit rate<br>(OMR)</th>
-                    <th class="border border-slate-900 p-1 w-16 text-center">Estimated<br>Quantity</th>
-                    <th class="border border-slate-900 p-1 w-20 text-center">Amount (OMR)</th>
-                </tr>
-            </thead>
-            <tbody id="pdf-items-body" class="divide-y divide-slate-900"></tbody>
-            <tfoot>
-                <tr class="font-black border-t border-slate-900">
-                    <td colspan="5" class="border border-slate-900 p-1 text-right uppercase">Total cost of the maintenance order (R.O)</td>
-                    <td class="border border-slate-900 p-1 text-center text-slate-950 font-black text-[10px]" id="pdf-grand-total">0.000</td>
-                </tr>
-            </tfoot>
-        </table>
+    <!-- Table -->
+    <table class="w-full border-collapse border border-slate-900 text-[9px] mb-4 text-left">
+        <thead>
+            <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-900">
+                <th class="border border-slate-900 p-1 w-16 text-center">Item No.</th>
+                <th class="border border-slate-900 p-1 text-center">Description</th>
+                <th class="border border-slate-900 p-1 w-12 text-center">Unit</th>
+                <th class="border border-slate-900 p-1 w-16 text-center">Unit rate<br>(OMR)</th>
+                <th class="border border-slate-900 p-1 w-16 text-center">Estimated<br>Quantity</th>
+                <th class="border border-slate-900 p-1 w-20 text-center">Amount (OMR)</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-items-body" class="divide-y divide-slate-900"></tbody>
+        <tfoot>
+            <tr class="font-black border-t border-slate-900">
+                <td colspan="5" class="border border-slate-900 p-1 text-right uppercase">Total cost of the maintenance order (R.O)</td>
+                <td class="border border-slate-900 p-1 text-center text-slate-950 font-black text-[10px]" id="pdf-grand-total">0.000</td>
+            </tr>
+        </tfoot>
+    </table>
 
-        <!-- Signatures Block -->
-        <div class="pdf-signatures page-break-inside-avoid pt-3 border-t border-slate-300 mt-4">
-            <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
-                <div>
-                    <p>Project Engineer / Road Supervisor</p>
-                    <div class="h-10 flex items-center justify-center my-0.5" id="sig-eng">Status: Pending</div>
-                </div>
-                <div>
-                    <p>Head Section of Road Maintenance</p>
-                    <div class="h-10 flex items-center justify-center my-0.5" id="sig-head">Status: Pending</div>
-                </div>
+    <!-- Signatures Block -->
+    <div class="pdf-signatures page-break-inside-avoid pt-3 border-t border-slate-300 mt-4">
+        <div class="grid grid-cols-2 gap-4 text-center font-bold text-[9px] mb-4">
+            <div>
+                <p>Project Engineer / Road Supervisor</p>
+                <div class="h-10 flex items-center justify-center my-0.5" id="sig-eng">Status: Pending</div>
             </div>
-            <div class="text-center font-bold text-[9px]">
-                <p>Director of Governorate Road Department</p>
-                <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
+            <div>
+                <p>Head Section of Road Maintenance</p>
+                <div class="h-10 flex items-center justify-center my-0.5" id="sig-head">Status: Pending</div>
             </div>
         </div>
-
-        <div class="pdf-footer mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid">
-            <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
-            <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
+        <div class="text-center font-bold text-[9px]">
+            <p>Director of Governorate Road Department</p>
+            <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <div class="pdf-footer mt-6 pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid">
+        <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
+        <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
+    </div>
+</div>
 
     <script>
         const contractBOQLibrary = [
