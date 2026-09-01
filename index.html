@@ -43,105 +43,94 @@
         window.firestoreTools = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, getDoc, signInWithEmailAndPassword, signOut };
     </script>
 
-  <style>
-    body { font-family: 'Tajawal', sans-serif; }
-    #map { height: 350px; width: 100%; z-index: 1; }
-    *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
-
-    /* ضبط هوامش الصفحة لحجز مساحة دقيقة للترويسة العليا والتذييل السفلي */
-    @page {
-        size: A4;
-        margin-top: 42mm;    /* مساحة مخصصة للترويسة العلويّة */
-        margin-bottom: 28mm; /* مساحة مخصصة للتذييل السفلي */
-        margin-left: 10mm;
-        margin-right: 10mm;
-    }
-
-    @media print { 
-        .no-print { display: none !important; } 
+    <style> 
+        body { font-family: 'Tajawal', sans-serif; }
+        #map { height: 350px; width: 100%; z-index: 1; }
+        *:focus-visible { outline: 3px solid #f59e0b !important; outline-offset: 2px; }
+        @media print { 
+            .no-print { display: none !important; } 
+            .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+            .pdf-document {
+                width: 194mm !important;
+                max-width: none !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+                direction: ltr !important;
+            }
+        }
         .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-        
-        body {
-            background-color: #fff !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-
         .pdf-document {
-            width: 100% !important;
-            max-width: none !important;
-            height: auto !important;
-            min-height: 0 !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            box-sizing: border-box !important;
-            direction: ltr !important;
-            border: none !important;
-            padding: 0 !important;
-            background: transparent !important;
+            width: 194mm;
+            max-width: 194mm;
+            height: auto;
+            min-height: 0;
+            overflow: visible;
+            box-sizing: border-box;
+            direction: ltr;
         }
-
-        /* تثبيت ترويسة الصفحة في أعلى كل صفحة مطبوعة ضمن الهامش المحجوز */
-        .print-header-fixed {
+        .pdf-document table {
+            page-break-inside: auto;
+            break-inside: auto;
+        }
+        .pdf-document thead {
+            display: table-header-group;
+        }
+        .pdf-document tfoot {
+            display: table-row-group;
+        }
+        .pdf-document tr,
+        .pdf-document .pdf-signatures,
+        .pdf-document .pdf-footer {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .pdf-document img {
+            max-width: 100%;
+        }
+        .pdf-export-host {
             position: fixed;
-            top: -38mm; 
-            left: 0;
-            right: 0;
-            height: 35mm;
-            background-color: #fff;
-            z-index: 9999;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 5px;
+            inset: 0 auto auto 0;
+            width: 210mm;
+            background: #fff;
+            z-index: -2147483647;
+            pointer-events: none;
         }
-
-        /* تثبيت تذييل الصفحة في أسفل كل صفحة مطبوعة ضمن الهامش المحجوز */
-        .print-footer-fixed {
-            position: fixed;
-            bottom: -25mm; 
-            left: 0;
-            right: 0;
-            height: 20mm;
-            background-color: #fff;
-            z-index: 9999;
+        .pdf-sheet {
+            position: relative;
+            width: 210mm;
+            height: 297mm;
+            overflow: hidden;
+            box-sizing: border-box;
+            background: #fff;
+            direction: ltr;
+            break-after: page;
         }
-    }
-
-    .page-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-    
-    .pdf-document {
-        width: 194mm;
-        max-width: 194mm;
-        height: auto;
-        min-height: 0;
-        overflow: visible;
-        box-sizing: border-box;
-        direction: ltr;
-    }
-    
-    .pdf-document table {
-        page-break-inside: auto;
-        break-inside: auto;
-    }
-    
-    .pdf-document thead {
-        display: table-header-group; 
-    }
-    
-    .pdf-document tfoot {
-        display: table-row-group;
-    }
-    
-    .pdf-document tr,
-    .pdf-document .pdf-signatures,
-    .pdf-document .pdf-footer {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-    }
-    
-    .pdf-document img {
-        max-width: 100%;
-    }
-</style>
+        .pdf-sheet-header {
+            position: absolute;
+            top: 5mm;
+            left: 8mm;
+            width: 194mm;
+        }
+        .pdf-sheet-body {
+            position: absolute;
+            left: 8mm;
+            width: 194mm;
+            overflow: hidden;
+        }
+        .pdf-sheet-footer {
+            position: absolute;
+            bottom: 5mm;
+            left: 8mm;
+            width: 194mm;
+        }
+        .pdf-sheet table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+    </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
@@ -379,11 +368,13 @@
 
     <!-- Official Printable PDF Template (A4 Standard Size Styling) -->
    
-<div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white p-6 max-w-[210mm] min-h-[297mm] mx-auto text-slate-900 font-sans text-[11px] relative border">    
+<div id="pdf-template" dir="ltr" class="pdf-document hidden bg-white text-slate-900 font-sans text-[11px]">
     
-    <!-- الترويسة الثابتة في أعلى كل صفحة -->
-    <div class="print-header-fixed">
-        <div class="flex justify-between items-center pb-2 px-4 pt-2">
+    <!-- قسم المحتوى العلوي والجدول والتواقيع -->
+    <div>
+        <!-- Header Block -->
+        <div class="pdf-page-header">
+        <div class="flex justify-between items-center border-b pb-3 mb-3">
             <div class="w-1/3 flex justify-start items-center">
                 <img src="https://mtcit988.github.io/rowadcommand/nameminen.svg" alt="Ministry Name English" class="h-10 w-auto object-contain">
             </div>
@@ -394,10 +385,7 @@
                 <img src="https://mtcit988.github.io/rowadcommand/nameminar.svg" alt="اسم الوزارة بالعربي" class="h-12 w-auto object-contain">
             </div>
         </div>
-    </div>
 
-    <!-- المحتوى الأساسي للتقرير -->
-    <div class="print-container">
         <!-- Title Sub-header -->
         <div class="text-center font-bold text-red-700 space-y-0.5 mb-3 uppercase text-[10px]">
             <p class="tracking-wide">SULTANATE OF OMAN</p>
@@ -406,10 +394,11 @@
             <p class="text-red-700 mt-1 font-black">MAINTENANCE OF PAVED ROAD PROJECTS</p>
             <p class="text-red-700 font-black">( AL BURAIMI GOVERNORATE ) - ( FOR 5 YEARS )</p>
         </div>
+        </div>
 
         <!-- Details Grid -->
-        <div class="grid grid-cols-12 gap-y-1 text-[10px] font-bold mb-3 border-t border-b py-2 text-slate-900 text-left">
-            <div class="col-span-4 uppercase"> ORDER NO</div>
+        <div class="pdf-first-page-details grid grid-cols-12 gap-y-1 text-[10px] font-bold mb-3 border-t border-b py-2 text-slate-900 text-left">
+            <div class="col-span-4 uppercase">WORK ORDER NO</div>
             <div class="col-span-8 font-black text-blue-950" id="pdf-code">---</div>
             <div class="col-span-4 uppercase">DATE OF ISSUE</div>
             <div class="col-span-8" id="pdf-issue-date">---</div>
@@ -419,12 +408,20 @@
             <div class="col-span-8" id="pdf-target-date">---</div>
             <div class="col-span-4 uppercase">LOCATION</div>
             <div class="col-span-8" id="pdf-location">---</div>
+            <div class="col-span-4 uppercase hidden">CONTRACTOR</div>
+            <div class="col-span-8 hidden" id="pdf-contractor">---</div>
+            <div class="col-span-4 uppercase hidden">PRIORITY / STATUS</div>
+            <div class="col-span-8 hidden" id="pdf-priority-status">---</div>
+            <div class="col-span-4 uppercase hidden">CREATED BY</div>
+            <div class="col-span-8 hidden" id="pdf-created-by">---</div>
+            <div class="col-span-4 uppercase hidden">COORDINATES</div>
+            <div class="col-span-8 hidden" id="pdf-coordinates">---</div>
         </div>
 
-        <p class="font-bold text-[10px] mb-2 text-left">List of  as per the  Order No.</p>
+        <p class="pdf-table-intro font-bold text-[10px] mb-2 text-left">List of work as per the Work Order No.</p>
 
         <!-- Table -->
-        <table class="w-full border-collapse border border-slate-900 text-[9px] mb-4 text-left">
+        <table class="pdf-items-table w-full border-collapse border border-slate-900 text-[9px] mb-4 text-left">
             <thead>
                 <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-900">
                     <th class="border border-slate-900 p-1 w-16 text-center">Item No.</th>
@@ -463,20 +460,19 @@
         </div>
     </div>
 
-    <!-- التذييل الثابت في أسفل كل صفحة -->
-    <div class="print-footer-fixed">
-        <div class="pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold px-4">
-            <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
-            <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
-        </div>
+    <!-- Footer المثبت في الأسفل تماماً -->
+    <div class="pdf-footer pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid mt-auto">
+        <p>P.O. Box: 684 Muscat, Postal Code: 100, Tel.: 24685650, Fax: 24685651</p>
+        <p style="font-family: 'Amiri', serif;">ص.ب: ٦٨٤ مسقط - الرمز البريدي: ١٠٠ - هاتف: ٢٤٦٨٥٦٥٠، فاكس: ٢٤٦٨٥٦٥١</p>
     </div>
 </div>
+
     <script>
         const contractBOQLibrary = [
             { itemNo: "1.3.5 (ii)", desc: "Sampling and Testing for any Type in Assets and Materials in Approved Laboratory subjected to the Engineer Approvals.", unit: "-", price: 0 },
             { itemNo: "1.4.3(i)", desc: "Mobilization and demobilization of Contractor's site facilities", unit: "L.S.", price: 42500 },
             { itemNo: "1.4.3(ii)", desc: "Maintenance of Contractor's site facilities", unit: "month", price: 20000 },
-            { itemNo: "1.7.6(i)", desc: "Maintenance and protection of traffic in all s orders that needs a diversion and as directed by the Engineer", unit: "-", price: 0 },
+            { itemNo: "1.7.6(i)", desc: "Maintenance and protection of traffic in all works orders that needs a diversion and as directed by the Engineer", unit: "-", price: 0 },
             { itemNo: "1.7.6(ii)", desc: "Supply and compaction of sub-base on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", price: 0.1 },
             { itemNo: "1.7.6(iii)", desc: "Supply and compaction of bituminous base course on diversions where ordered by the Engineer (any Thickness)", unit: "cu.m.", price: 1 },
             { itemNo: "1.7.6(iv)", desc: "Supply of bituminous prime coat on Diversions where ordered by the Engineer", unit: "kg", price: 0.1 },
@@ -513,7 +509,7 @@
             { itemNo: "2.2.5(xiv)e", desc: "Removal of re-usable (Refixing) Post ( the inside inversed U post in the middel) of Impact Attenuator including Foundation and Accessories .", unit: "nr.", price: 27 },
             { itemNo: "2.2.5(xiv)f", desc: "Removal of re-usable (Refixing) expandable modules/cartridges or steel type or others such as barrels of Impact Attenuator", unit: "nr.", price: 27 },
             { itemNo: "2.2.5(xv)", desc: "Removal of re-usable (Refixing) Concrete Safety Barrier including Foundation (as Existing).", unit: "lin.m.", price: 4 },
-            { itemNo: "2.2.5(xviii)", desc: "Removal and disposal of all types of drainage protection s (Gabion Box, Grouted and Loose rip-rap) including Cut off wall", unit: "cu.m.", price: 4.6 },
+            { itemNo: "2.2.5(xviii)", desc: "Removal and disposal of all types of drainage protection works (Gabion Box, Grouted and Loose rip-rap) including Cut off wall", unit: "cu.m.", price: 4.6 },
             { itemNo: "2.2.5(xix)", desc: "Removal and disposal/delivary of existing fences and gates (any type and any height) including Foundation, or Refixe the same.", unit: "lin.m.", price: 4.6 },
             { itemNo: "2.2.5(xxvi)b", desc: "Removal and delivary OR re-use (Refixing) of street light pole with accessories, including pole and foundation, as directed by Engineer", unit: "nr", price: 80 },
             { itemNo: "2.2.5(xxvi)c", desc: "Removal and delivary OR re-use (Refixing) of Traffic signals with accessories including post and foundation (any type)", unit: "nr", price: 350 },
@@ -543,7 +539,7 @@
             { itemNo: "4.5.14(vi)", desc: "Polimar modified Bituminous wearing course (Class B) (variable thickness)", unit: "cu.m.", price: 4.65 },
             { itemNo: "4.4.14(vii)", desc: "Superpave Bituminous Wearing Course (variable thickness)", unit: "cu.m.", price: 4.65 },
             { itemNo: "4.6.10(iii)", desc: "Bituminous Slurry Seal Coats", unit: "sq.m.", price: 5 },
-            { itemNo: "4.7.14(ii)", desc: "Bituminous Patching ", unit: "cu.m.", price: 130 },
+            { itemNo: "4.7.14(ii)", desc: "Bituminous Patching Work", unit: "cu.m.", price: 130 },
             { itemNo: "4.9.11(i)", desc: "Surface milling (thickness 5cm maximum)", unit: "sq.m.", price: 2.5 },
             { itemNo: "4.9.11(ii)", desc: "Crack Sealing", unit: "lin.m.", price: 3 },
             { itemNo: "4.9.11 (iii)", desc: "Pavement Repairs (Overlay and Surface Preparation)", unit: "sq.m.", price: 6 },
@@ -552,7 +548,7 @@
             { itemNo: "4.10.6(ii)", desc: "Speed humps including marking and signs", unit: "nr.", price: 500 },
             { itemNo: "5.1.7(i)B466", desc: "Concrete Class 15/20 as blinding for all reinforced concrete", unit: "cu.m.", price: 14 },
             { itemNo: "5.1.7(i)b", desc: "Concrete Class 35/20 for box culvert, wing wall, retaining wall, head wall, apron slab", unit: "cu.m.", price: 16 },
-            { itemNo: "5.1.7(i)c", desc: "Reparing s of Concrete Structure including Concrete Pavement s as Existing", unit: "cu.m.", price: 18 },
+            { itemNo: "5.1.7(i)c", desc: "Reparing Works of Concrete Structure including Concrete Pavement Works as Existing", unit: "cu.m.", price: 18 },
             { itemNo: "5.2.6(ii)", desc: "High tensile steel bar reinforcement of any diameter", unit: "t.", price: 410 },
             { itemNo: "5.2.6(iii)", desc: "Fabric wire mesh reinforcement of any size", unit: "t.", price: 325 },
             { itemNo: "5.7.6(ii)", desc: "Reinforced Cement Concrete Pavement", unit: "cu.m.", price: 37 },
@@ -648,8 +644,8 @@
             { itemNo: "14.3.6(i)d", desc: "Reflecting Ceramic (Buttons) Road Studs (any color) Double Face", unit: "nr.", price: 8.8 },
             { itemNo: "14.3.6(ii)a", desc: "Non-Reflecting Road Studs", unit: "nr.", price: 3.7 },
             { itemNo: "14.3.6(iii)", desc: "Solar Road Studs (any color and any type) As Existing", unit: "nr.", price: 9.5 },
-            { itemNo: "19.1 (i)", desc: "Provision for Unforeseen Utilities (relocation or protection s) for electrical lines, water lines, telephone, Falaj, etc,.", unit: "P.S", price: 0 },
-            { itemNo: "19.1 (ii)", desc: "Design of any s including Survey s and detailed designed drawings.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (i)", desc: "Provision for Unforeseen Utilities (relocation or protection works) for electrical lines, water lines, telephone, Falaj, etc,.", unit: "P.S", price: 0 },
+            { itemNo: "19.1 (ii)", desc: "Design of any works including Survey works and detailed designed drawings.", unit: "P.S", price: 0 },
             { itemNo: "19.1 (iii)", desc: "Maintenance of Traffic signals with all accessories and programming as directed by Engineer and Concerned Authorities.", unit: "P.S", price: 0 },
             { itemNo: "19.1 (iv)", desc: "Maintenance of Pumps at Underpasses Bridge (Vehicular/Pedestrian) with all accessories as directed by Engineer.", unit: "P.S", price: 0 },
             { itemNo: "19.1 (v)", desc: "Provide and Install Street lighting Poles (as Existing) including cables, all accessories, Foundations as directed by Engineer.", unit: "P.S", price: 0 },
@@ -699,23 +695,23 @@
                 loginBtn: 'Login to System',
                 hTitle: 'ROWADS Road Operations & Management System',
                 hSub: 'Roads Department - Al Buraimi Governorate',
-                createBtn: 'Create New  Order',
-                statTotal: 'Total  Orders',
+                createBtn: 'Create New Work Order',
+                statTotal: 'Total Work Orders',
                 statOpen: 'Open / In Progress',
                 statClosed: 'Closed / Completed',
                 statCost: 'Total Estimated Budget',
-                mapTitle: ' Sites Map',
-                tableTitle: ' Orders Register & Approval flow',
-                thCode: 'WO Code', thLoc: 'Wilayat & Area', thBy: 'Created By', thCost: 'Total Cost', thStatus: ' Status', thStage: 'Approval Stage', thActions: 'Actions & Approvals',
-                modalTitleCreate: 'Create New  Order & BOQ Quantities',
+                mapTitle: 'Work Sites Map',
+                tableTitle: 'Work Orders Register & Approval Workflow',
+                thCode: 'WO Code', thLoc: 'Wilayat & Area', thBy: 'Created By', thCost: 'Total Cost', thStatus: 'Work Status', thStage: 'Approval Stage', thActions: 'Actions & Approvals',
+                modalTitleCreate: 'Create New Work Order & BOQ Quantities',
                 lblCode: 'WO Reference Code *', lblWilayat: 'Wilayat *', lblRegion: 'Area / Street *',
-                lblIssue: ' Order Issue Date *', lblDuration: 'Duration (in Days) *', lblTarget: 'Target Completion Date *',
-                lblContractor: 'Contractor', lblPriority: 'Priority', lblWStatus: ' Status *',
+                lblIssue: 'Work Order Issue Date *', lblDuration: 'Duration (in Days) *', lblTarget: 'Target Completion Date *',
+                lblContractor: 'Contractor', lblPriority: 'Priority', lblWStatus: 'Work Status *',
                 boqLegend: 'Approved Contract BOQ Items', addBoqBtn: 'Add BOQ Item',
                 thBoqItem: 'Select Contract Item', thBoqUnit: 'Unit', thBoqQty: 'Qty', thBoqRate: 'Unit Rate (OMR)', thBoqTotal: 'Total (OMR)', thBoqDel: 'Delete',
-                boqTotalTxt: 'Total  Order Estimated Cost:',
+                boqTotalTxt: 'Total Work Order Estimated Cost:',
                 lblLat: 'Latitude (Lat)', lblLng: 'Longitude (Lng)',
-                cancelBtn: 'Cancel', saveBtn: 'Save  Order'
+                cancelBtn: 'Cancel', saveBtn: 'Save Work Order'
             }
         };
 
@@ -953,9 +949,9 @@
         function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
 
         function openModalForCreate(lat = 24.25, lng = 55.78) {
-            if (currentUser.role !== 'employee') { showToast(currentLang==='ar'?'الصلاحية للموظفين فقط':'Only employees can create new  orders', true); return; }
+            if (currentUser.role !== 'employee') { showToast(currentLang==='ar'?'الصلاحية للموظفين فقط':'Only employees can create new work orders', true); return; }
             document.getElementById('edit-id').value = '';
-            document.getElementById('modal-title').innerText = currentLang === 'ar' ? 'إنشاء أمر عمل جديد وحصر مواد العقد' : 'Create New  Order & BOQ Quantities';
+            document.getElementById('modal-title').innerText = currentLang === 'ar' ? 'إنشاء أمر عمل جديد وحصر مواد العقد' : 'Create New Work Order & BOQ Quantities';
             document.getElementById('order-form').reset();
             document.getElementById('boq-items-body').innerHTML = '';
             document.getElementById('code').value = `WO-2026-${globalOrders.length + 101}`;
@@ -976,7 +972,7 @@
             }
 
             document.getElementById('edit-id').value = o.firestoreId;
-            document.getElementById('modal-title').innerText = currentLang === 'ar' ? `تعديل أمر العمل (${o.code})` : `Edit  Order (${o.code})`;
+            document.getElementById('modal-title').innerText = currentLang === 'ar' ? `تعديل أمر العمل (${o.code})` : `Edit Work Order (${o.code})`;
             document.getElementById('code').value = o.code;
             document.getElementById('wilayat').value = o.wilayat;
             document.getElementById('region').value = o.region || '';
@@ -1143,95 +1139,159 @@
             await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         }
 
-        function createPdfRenderCopy(sourceElement) {
-            const host = document.createElement('div');
-            host.setAttribute('aria-hidden', 'true');
-            Object.assign(host.style, {
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                width: '210mm',
-                minHeight: '297mm',
-                margin: '0',
-                padding: '0',
-                overflow: 'visible',
-                direction: 'ltr',
-                background: '#ffffff',
-                zIndex: '-2147483647'
-            });
-
-            const printable = sourceElement.cloneNode(true);
-            printable.removeAttribute('id');
-            printable.classList.remove('hidden', 'mx-auto', 'max-w-[210mm]');
-            printable.classList.add('pdf-export-copy');
-            Object.assign(printable.style, {
-                display: 'block',
-                position: 'relative',
-                top: '0',
-                left: '0',
-                width: '194mm',
-                maxWidth: '194mm',
-                height: 'auto',
-                minHeight: '0',
-                margin: '0',
-                overflow: 'visible',
-                direction: 'ltr',
-                transform: 'none',
-                boxSizing: 'border-box',
-                background: '#ffffff'
-            });
-
-            host.appendChild(printable);
-            document.body.appendChild(host);
-            return { host, printable };
+        function clonePdfNode(source, fallbackClass = '') {
+            const clone = source ? source.cloneNode(true) : document.createElement('div');
+            clone.removeAttribute('id');
+            if (fallbackClass) clone.classList.add(fallbackClass);
+            return clone;
         }
 
-        function getPdfProtectedRanges(printable, canvasScale) {
-            const rootRect = printable.getBoundingClientRect();
-            return Array.from(printable.querySelectorAll('tr, .pdf-signatures, .pdf-footer'))
-                .map(node => {
-                    const rect = node.getBoundingClientRect();
-                    return {
-                        start: Math.max(0, Math.floor((rect.top - rootRect.top) * canvasScale)),
-                        end: Math.max(0, Math.ceil((rect.bottom - rootRect.top) * canvasScale))
-                    };
-                })
-                .filter(range => range.end > range.start)
-                .sort((a, b) => a.start - b.start);
-        }
+        function buildPdfTable(sourceTable, includeFooter = false) {
+            const table = sourceTable.cloneNode(false);
+            table.removeAttribute('id');
+            table.classList.remove('mb-4');
+            table.style.margin = '0';
 
-        function calculatePdfPageSlices(totalHeight, idealPageHeight, protectedRanges) {
-            const slices = [];
-            let start = 0;
-            const minimumUsefulPage = Math.floor(idealPageHeight * 0.45);
+            const sourceHead = sourceTable.querySelector('thead');
+            if (sourceHead) table.appendChild(sourceHead.cloneNode(true));
 
-            while (start < totalHeight) {
-                let end = Math.min(start + idealPageHeight, totalHeight);
+            const body = document.createElement('tbody');
+            body.className = sourceTable.querySelector('tbody')?.className || '';
+            table.appendChild(body);
 
-                if (end < totalHeight) {
-                    const crossingRange = protectedRanges.find(range =>
-                        range.start > start &&
-                        range.start < end &&
-                        range.end > end
-                    );
-
-                    if (crossingRange && crossingRange.start - start >= minimumUsefulPage) {
-                        end = crossingRange.start;
-                    }
-                }
-
-                if (end <= start) {
-                    end = Math.min(start + idealPageHeight, totalHeight);
-                }
-
-                slices.push({ start, end });
-                start = end;
+            if (includeFooter) {
+                const sourceFooter = sourceTable.querySelector('tfoot');
+                if (sourceFooter) table.appendChild(sourceFooter.cloneNode(true));
             }
 
-            return slices;
+            return { table, body };
         }
 
-        async function exportElementToA4Pdf(printable, filename) {
+        function measurePdfHeaderFooter(headerSource, footerSource, host) {
+            const probe = document.createElement('section');
+            probe.className = 'pdf-sheet text-slate-900 font-sans text-[11px]';
+            probe.style.visibility = 'hidden';
+
+            const header = clonePdfNode(headerSource);
+            const footer = clonePdfNode(footerSource);
+            header.style.position = 'absolute';
+            header.style.top = '5mm';
+            header.style.left = '8mm';
+            header.style.width = '194mm';
+            header.style.margin = '0';
+            footer.style.position = 'absolute';
+            footer.style.bottom = '5mm';
+            footer.style.left = '8mm';
+            footer.style.width = '194mm';
+            footer.style.margin = '0';
+
+            probe.appendChild(header);
+            probe.appendChild(footer);
+            host.appendChild(probe);
+
+            const sheetRect = probe.getBoundingClientRect();
+            const headerRect = header.getBoundingClientRect();
+            const footerRect = footer.getBoundingClientRect();
+            const metrics = {
+                bodyTop: headerRect.bottom - sheetRect.top + 10,
+                bodyBottom: sheetRect.bottom - footerRect.top + 10
+            };
+
+            probe.remove();
+            return metrics;
+        }
+
+        function buildPaginatedPdfSheets(sourceElement) {
+            const headerSource = sourceElement.querySelector('.pdf-page-header');
+            const detailsSource = sourceElement.querySelector('.pdf-first-page-details');
+            const introSource = sourceElement.querySelector('.pdf-table-intro');
+            const tableSource = sourceElement.querySelector('.pdf-items-table');
+            const signaturesSource = sourceElement.querySelector('.pdf-signatures');
+            const footerSource = sourceElement.querySelector('.pdf-footer');
+
+            if (!headerSource || !tableSource || !footerSource) {
+                throw new Error('PDF_TEMPLATE_INCOMPLETE');
+            }
+
+            const sourceRows = Array.from(tableSource.querySelectorAll('tbody > tr'));
+            const host = document.createElement('div');
+            host.className = 'pdf-export-host';
+            host.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(host);
+            const pageMetrics = measurePdfHeaderFooter(headerSource, footerSource, host);
+
+            const pages = [];
+
+            const createSheet = (isFirstPage) => {
+                const sheet = document.createElement('section');
+                sheet.className = 'pdf-sheet text-slate-900 font-sans text-[11px]';
+
+                const header = clonePdfNode(headerSource, 'pdf-sheet-header');
+                header.classList.add('pdf-sheet-header');
+                header.style.margin = '0';
+                sheet.appendChild(header);
+
+                const footer = clonePdfNode(footerSource, 'pdf-sheet-footer');
+                footer.classList.add('pdf-sheet-footer');
+                footer.classList.remove('mt-auto');
+                footer.style.margin = '0';
+                sheet.appendChild(footer);
+
+                const body = document.createElement('div');
+                body.className = 'pdf-sheet-body';
+                body.style.top = `${pageMetrics.bodyTop}px`;
+                body.style.bottom = `${pageMetrics.bodyBottom}px`;
+                sheet.appendChild(body);
+                host.appendChild(sheet);
+
+                if (isFirstPage && detailsSource) {
+                    body.appendChild(clonePdfNode(detailsSource));
+                }
+                if (isFirstPage && introSource) {
+                    body.appendChild(clonePdfNode(introSource));
+                }
+
+                const { table, body: tableBody } = buildPdfTable(tableSource);
+                body.appendChild(table);
+
+                const page = { sheet, body, table, tableBody };
+                pages.push(page);
+                return page;
+            };
+
+            const fits = page => page.body.scrollHeight <= page.body.clientHeight + 1;
+            let currentPage = createSheet(true);
+
+            sourceRows.forEach(sourceRow => {
+                const row = sourceRow.cloneNode(true);
+                currentPage.tableBody.appendChild(row);
+
+                if (!fits(currentPage) && currentPage.tableBody.children.length > 1) {
+                    row.remove();
+                    currentPage = createSheet(false);
+                    currentPage.tableBody.appendChild(row);
+                }
+            });
+
+            const summaryTable = buildPdfTable(tableSource, true).table;
+            summaryTable.querySelector('thead')?.remove();
+            const finalBlocks = document.createElement('div');
+            finalBlocks.className = 'pdf-final-blocks';
+            finalBlocks.appendChild(summaryTable);
+            if (signaturesSource) finalBlocks.appendChild(clonePdfNode(signaturesSource));
+            currentPage.body.appendChild(finalBlocks);
+
+            if (!fits(currentPage)) {
+                finalBlocks.remove();
+                currentPage = createSheet(false);
+                currentPage.table.remove();
+                currentPage.body.appendChild(finalBlocks);
+            }
+
+            return { host, pages };
+        }
+
+        async function exportSheetsToA4Pdf(pages, filename) {
             const html2canvasRenderer = window.html2canvas;
             if (typeof html2canvasRenderer !== 'function') {
                 throw new Error('PDF_RENDERER_NOT_LOADED');
@@ -1242,60 +1302,6 @@
                 throw new Error('PDF_WRITER_NOT_LOADED');
             }
 
-            const elementWidth = Math.ceil(printable.getBoundingClientRect().width);
-            const renderScale = Math.max(2, Math.min(3, window.devicePixelRatio || 2));
-            const canvas = await html2canvasRenderer(printable, {
-                scale: renderScale,
-                useCORS: true,
-                allowTaint: false,
-                imageTimeout: 15000,
-                letterRendering: true,
-                backgroundColor: '#ffffff',
-                scrollX: 0,
-                scrollY: 0,
-                width: elementWidth,
-                windowWidth: elementWidth,
-                onclone: clonedDocument => {
-                    clonedDocument.documentElement.setAttribute('dir', 'ltr');
-                    clonedDocument.body.setAttribute('dir', 'ltr');
-                    clonedDocument.documentElement.style.width = `${elementWidth}px`;
-                    clonedDocument.body.style.width = `${elementWidth}px`;
-                    clonedDocument.body.style.margin = '0';
-
-                    const clonedPrintable = clonedDocument.querySelector('.pdf-export-copy');
-                    if (clonedPrintable) {
-                        clonedPrintable.style.position = 'relative';
-                        clonedPrintable.style.top = '0';
-                        clonedPrintable.style.left = '0';
-                        clonedPrintable.style.width = `${elementWidth}px`;
-                        clonedPrintable.style.maxWidth = `${elementWidth}px`;
-                        clonedPrintable.style.margin = '0';
-                        clonedPrintable.style.transform = 'none';
-                        clonedPrintable.style.direction = 'ltr';
-                    }
-                }
-            });
-
-            const pageWidthMm = 210;
-            const pageHeightMm = 297;
-            const marginLeftMm = 8;
-            const marginRightMm = 8;
-            const marginTopMm = 8;
-            const marginBottomMm = 10;
-            const contentWidthMm = pageWidthMm - marginLeftMm - marginRightMm;
-            const contentHeightMm = pageHeightMm - marginTopMm - marginBottomMm;
-            const idealPageHeightPx = Math.max(
-                1,
-                Math.floor(canvas.width * (contentHeightMm / contentWidthMm))
-            );
-            const actualCanvasScale = canvas.width / elementWidth;
-            const protectedRanges = getPdfProtectedRanges(printable, actualCanvasScale);
-            const pageSlices = calculatePdfPageSlices(
-                canvas.height,
-                idealPageHeightPx,
-                protectedRanges
-            );
-
             const pdf = new JsPdfConstructor({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -1303,46 +1309,42 @@
                 compress: true
             });
 
-            pageSlices.forEach((slice, index) => {
+            for (let index = 0; index < pages.length; index += 1) {
                 if (index > 0) pdf.addPage('a4', 'portrait');
+                const sheet = pages[index].sheet;
+                const elementWidth = Math.ceil(sheet.getBoundingClientRect().width);
+                const elementHeight = Math.ceil(sheet.getBoundingClientRect().height);
+                const renderScale = Math.max(2, Math.min(3, window.devicePixelRatio || 2));
+                const pageCanvas = await html2canvasRenderer(sheet, {
+                    scale: renderScale,
+                    useCORS: true,
+                    allowTaint: false,
+                    imageTimeout: 15000,
+                    letterRendering: true,
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: elementWidth,
+                    height: elementHeight,
+                    windowWidth: elementWidth
+                });
 
-                const sliceHeight = slice.end - slice.start;
-                const pageCanvas = document.createElement('canvas');
-                pageCanvas.width = canvas.width;
-                pageCanvas.height = sliceHeight;
-
-                const context = pageCanvas.getContext('2d', { alpha: false });
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-                context.drawImage(
-                    canvas,
-                    0,
-                    slice.start,
-                    canvas.width,
-                    sliceHeight,
-                    0,
-                    0,
-                    canvas.width,
-                    sliceHeight
-                );
-
-                const renderedHeightMm = sliceHeight * contentWidthMm / canvas.width;
                 pdf.addImage(
                     pageCanvas.toDataURL('image/jpeg', 0.98),
                     'JPEG',
-                    marginLeftMm,
-                    marginTopMm,
-                    contentWidthMm,
-                    renderedHeightMm,
+                    0,
+                    0,
+                    210,
+                    297,
                     undefined,
                     'FAST'
                 );
-            });
+            }
 
             pdf.save(filename);
         }
 
-    async function generatePDF(firestoreId) {
+        async function generatePDF(firestoreId) {
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
@@ -1401,18 +1403,20 @@
                     <td class="border border-slate-900 p-1 text-center font-mono">${item.itemNo}</td>
                     <td class="border border-slate-900 p-1 text-left">${item.desc}</td>
                     <td class="border border-slate-900 p-1 text-center">${item.unit}</td>
-                    <td class="border border-slate-900 p-1 text-center">${Number(item.rate || item.unitPrice || 0).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1 text-center">${Number(item.unitPrice || 0).toFixed(3)}</td>
                     <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.qty || 0).toFixed(2)}</td>
-                    <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.total || ((parseFloat(item.qty) || 0) * (parseFloat(item.rate || item.unitPrice) || 0)) || 0).toFixed(3)}</td>
+                    <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.total || 0).toFixed(3)}</td>
                 </tr>
             `).join('');
 
             const element = document.getElementById('pdf-template');
-            const { host, printable } = createPdfRenderCopy(element);
+            let exportHost = null;
 
             try {
-                await waitForPdfAssets(printable);
-                await exportElementToA4Pdf(printable, `WorkOrder_${o.code}.pdf`);
+                const exportResult = buildPaginatedPdfSheets(element);
+                exportHost = exportResult.host;
+                await waitForPdfAssets(exportHost);
+                await exportSheetsToA4Pdf(exportResult.pages, `WorkOrder_${o.code}.pdf`);
 
                 showToast(currentLang === 'ar' ? 'تم استخراج الوثيقة الرسمية PDF بقياس A4 بنجاح' : 'Official Work Order A4 PDF generated successfully');
             } catch (error) {
@@ -1429,7 +1433,7 @@
                     true
                 );
             } finally {
-                host.remove();
+                exportHost?.remove();
             }
         }
 
@@ -1524,62 +1528,7 @@
 
             initMap(); 
             setupFirebaseRealtime();
-   };
-        function printWorkOrder(orderId) {
-    // 1. البحث عن بيانات أمر العمل (سواء من المصفوفة العامة لديك أو من جلب مباشر)
-    // نفترض أن لديك مصفوفة مخزنة أو يتم تمرير كائن أمر العمل مباشرة
-    const order = allOrders.find(o => o.id === orderId || o.code === orderId);
-    if (!order) {
-        showToast("لم يتم العثور على بيانات أمر العمل", "error");
-        return;
-    }
-
-    // 2. تعبئة بيانات قالب الطباعة الرسمي (pdf-template)
-    document.getElementById('pdf-code').innerText = order.code || '---';
-    document.getElementById('pdf-issue-date').innerText = order.issueDate || '---';
-    document.getElementById('pdf-duration').innerText = (order.durationDays || '---') + ' Days';
-    document.getElementById('pdf-target-date').innerText = order.targetCompletionDate || '---';
-    document.getElementById('pdf-location').innerText = `${order.wilayat || ''} - ${order.region || ''}`;
-
-    // تعبئة جدول البنود (BOQ)
-    const pdfItemsBody = document.getElementById('pdf-items-body');
-    pdfItemsBody.innerHTML = '';
-    
-    let grandTotal = 0;
-    if (order.items && order.items.length > 0) {
-        order.items.forEach((item, index) => {
-            const itemTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0);
-            grandTotal += itemTotal;
-            
-            pdfItemsBody.innerHTML += `
-                <tr>
-                    <td class="border border-slate-900 p-1 text-center">${item.itemNo || (index + 1)}</td>
-                    <td class="border border-slate-900 p-1">${item.desc || ''}</td>
-                    <td class="border border-slate-900 p-1 text-center">${item.unit || '-'}</td>
-                    <td class="border border-slate-900 p-1 text-center">${(parseFloat(item.rate) || 0).toFixed(3)}</td>
-                    <td class="border border-slate-900 p-1 text-center">${item.qty || 0}</td>
-                    <td class="border border-slate-900 p-1 text-center">${itemTotal.toFixed(3)}</td>
-                </tr>
-            `;
-        });
-    }
-    document.getElementById('pdf-grand-total').innerText = grandTotal.toFixed(3);
-
-    // تحديث حالات الاعتماد في التواقيع
-    document.getElementById('sig-eng').innerText = order.stage >= 1 ? "Approved (Site Eng)" : "Status: Pending";
-    document.getElementById('sig-head').innerText = order.stage >= 2 ? "Approved (Section Head)" : "Status: Pending";
-    document.getElementById('sig-director').innerText = order.stage >= 3 ? "Approved (Director)" : "Status: Pending";
-
-    // 3. إظهار قالب الطباعة مؤقتاً وإخفاء واجهة النظام الأساسية عبر الطباعة
-    const pdfTemplate = document.getElementById('pdf-template');
-    pdfTemplate.classList.remove('hidden');
-
-    // 4. تنفيذ أمر الطباعة في المتصفح
-    window.print();
-
-    // 5. إخفاء القالب مرة أخرى بعد انتهاء الطباعة
-    pdfTemplate.classList.add('hidden');
-}
+        };
     </script>
 </body>
 </html>
