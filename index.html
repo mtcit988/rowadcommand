@@ -126,6 +126,50 @@
             left: 8mm;
             width: 194mm;
         }
+
+        /* Official stamp: fixed on every A4 page, independent of document flow. */
+        .pdf-sheet-stamp {
+            position: absolute !important;
+            right: 8mm !important;
+            bottom: 17mm;
+            width: 24mm !important;
+            height: 24mm !important;
+            max-width: 24mm !important;
+            max-height: 24mm !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            box-sizing: border-box !important;
+            z-index: 20 !important;
+            pointer-events: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .pdf-sheet-stamp-label {
+            font-size: 8px !important;
+            line-height: 1 !important;
+            font-weight: 700 !important;
+            margin: 0 0 1mm 0 !important;
+            white-space: nowrap !important;
+        }
+
+        .pdf-sheet-stamp img,
+        .pdf-sheet-stamp .official-stamp {
+            display: block !important;
+            width: 21mm !important;
+            height: 21mm !important;
+            max-width: 21mm !important;
+            max-height: 21mm !important;
+            object-fit: contain !important;
+            flex: 0 0 21mm !important;
+            margin: 0 !important;
+        }
+
+        .pdf-stamp-source {
+            display: none !important;
+        }
         .pdf-sheet table {
             width: 100%;
             border-collapse: collapse;
@@ -622,12 +666,16 @@
                 <p>Director of Governorate Road Department</p>
                 <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
             </div>
-       <div class="col-3 text-center stamp-container">
-        <p class="mb-1"><strong>الختم الرسمي</strong></p>
-       
-        <img src="https://mtcit988.github.io/rowadcommand/stamp.png" alt="ختم دائرة الطرق بمحافظة البريمي" class="official-stamp" id="pdf-stamp-img">
+       </div>
+
+    <!-- مصدر الختم: يتم نسخه آلياً إلى أسفل كل صفحة A4 بدون التأثير على المحتوى -->
+    <div class="pdf-stamp-source" aria-hidden="true">
+        <p class="pdf-sheet-stamp-label">الختم الرسمي</p>
+        <img src="https://mtcit988.github.io/rowadcommand/stamp.png"
+             alt="ختم دائرة الطرق بمحافظة البريمي"
+             class="official-stamp"
+             id="pdf-stamp-img">
     </div>
-</div>
 
     <!-- Footer المثبت في الأسفل تماماً -->
     <div class="pdf-footer pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid mt-auto">
@@ -1417,8 +1465,8 @@
             const headerRect = header.getBoundingClientRect();
             const footerRect = footer.getBoundingClientRect();
             const metrics = {
-                bodyTop: headerRect.bottom - sheetRect.top + 10,
-                bodyBottom: sheetRect.bottom - footerRect.top + 10
+                bodyTop: headerRect.bottom - sheetRect.top + 3,
+                bodyBottom: sheetRect.bottom - footerRect.top + 3
             };
 
             probe.remove();
@@ -1431,6 +1479,7 @@
             const introSource = sourceElement.querySelector('.pdf-table-intro');
             const tableSource = sourceElement.querySelector('.pdf-items-table');
             const signaturesSource = sourceElement.querySelector('.pdf-signatures');
+            const stampSource = sourceElement.querySelector('.pdf-stamp-source');
             const footerSource = sourceElement.querySelector('.pdf-footer');
 
             if (!headerSource || !tableSource || !footerSource) {
@@ -1460,6 +1509,15 @@
                 footer.classList.remove('mt-auto');
                 footer.style.margin = '0';
                 sheet.appendChild(footer);
+
+                /* Stamp is absolutely positioned, so it cannot push or alter body content. */
+                if (stampSource) {
+                    const stamp = clonePdfNode(stampSource, 'pdf-sheet-stamp');
+                    stamp.classList.remove('pdf-stamp-source');
+                    stamp.removeAttribute('id');
+                    stamp.style.margin = '0';
+                    sheet.appendChild(stamp);
+                }
 
                 const body = document.createElement('div');
                 body.className = 'pdf-sheet-body';
@@ -1632,13 +1690,6 @@
                     <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.total || 0).toFixed(3)}</td>
                 </tr>
             `).join('');
-            const stampImg = document.getElementById('pdf-stamp-img');
-        if (stampImg && !stampImg.complete) {
-            await new Promise((resolve) => {
-                stampImg.onload = resolve;
-                stampImg.onerror = resolve;
-            });
-        }
             const element = document.getElementById('pdf-template');
             let exportHost = null;
 
