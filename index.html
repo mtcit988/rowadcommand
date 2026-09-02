@@ -622,8 +622,12 @@
                 <p>Director of Governorate Road Department</p>
                 <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
             </div>
-        </div>
+       <div class="col-3 text-center stamp-container">
+        <p class="mb-1"><strong>الختم الرسمي</strong></p>
+       
+        <img src="https://mtcit988.github.io/rowadcommand/stamp.png" alt="ختم دائرة الطرق بمحافظة البريمي" class="official-stamp" id="pdf-stamp-img">
     </div>
+</div>
 
     <!-- Footer المثبت في الأسفل تماماً -->
     <div class="pdf-footer pt-2 border-t border-red-700 flex justify-between items-center text-[8px] text-red-800 font-bold page-break-inside-avoid mt-auto">
@@ -1628,7 +1632,13 @@
                     <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.total || 0).toFixed(3)}</td>
                 </tr>
             `).join('');
-
+            const stampImg = document.getElementById('pdf-stamp-img');
+        if (stampImg && !stampImg.complete) {
+            await new Promise((resolve) => {
+                stampImg.onload = resolve;
+                stampImg.onerror = resolve;
+            });
+        }
             const element = document.getElementById('pdf-template');
             let exportHost = null;
 
