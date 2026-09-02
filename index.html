@@ -1509,6 +1509,51 @@
 
             const element = document.getElementById('pdf-template');
             let exportHost = null;
+            const pdfEl = document.getElementById('pdf-template');
+    pdfEl.classList.remove('hidden');
+
+    // إجبار الأبعاد الثابتة للحاوية لتفادي مشكلة العرض الضيق في الهواتف
+    pdfEl.style.position = 'fixed';
+    pdfEl.style.left = '-9999px';
+    pdfEl.style.top = '0';
+    pdfEl.style.width = '794px'; // عرض ورقة A4 بدقة البكسل
+    pdfEl.style.maxWidth = 'none';
+
+    try {
+        // الانتظار القصير لضمان تحميل وتصير كافة الصور والخطوط في الهاتف
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const canvas = await html2canvas(pdfEl, { 
+            scale: 2, 
+            useCORS: true, 
+            allowTaint: true,
+            windowWidth: 1200, // محاكاة عرض الشاشة الكبيرة
+            scrollX: 0,
+            scrollY: 0
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`ROWADS_WorkOrder_${o.code}.pdf`);
+        showToast(currentLang === 'ar' ? 'تم تحميل ملف PDF بنجاح' : 'PDF downloaded successfully');
+    } catch (err) {
+        console.error(err);
+        window.print();
+    } finally {
+        // إعادة الحالة للوضع الطبيعي وإخفاء العنصر
+        pdfEl.style.position = '';
+        pdfEl.style.left = '';
+        pdfEl.style.top = '';
+        pdfEl.style.width = '';
+        pdfEl.style.maxWidth = '';
+        pdfEl.classList.add('hidden');
+    }
+}
 
             try {
                 const exportResult = buildPaginatedPdfSheets(element);
