@@ -1647,13 +1647,7 @@
     margin: 5px auto 0 auto;
     display: block;
 }
-            const stampImg = document.getElementById('pdf-stamp-img');
-        if (stampImg && !stampImg.complete) {
-            await new Promise((resolve) => {
-                stampImg.onload = resolve;
-                stampImg.onerror = resolve;
-            });
-        }
+       
             const element = document.getElementById('pdf-template');
             let exportHost = null;
 
