@@ -622,10 +622,10 @@
                 <p>Director of Governorate Road Department</p>
                 <div class="h-10 flex items-center justify-center my-0.5" id="sig-director">Status: Pending</div>
             </div>
-       <div class="col-3 text-center stamp-container">
-        <p class="mb-1"><strong>الختم الرسمي</strong></p>
-       
-        <img src="https://mtcit988.github.io/rowadcommand/stamp.png" alt="ختم دائرة الطرق بمحافظة البريمي" class="official-stamp" id="pdf-stamp-img">
+<div class="stamp-container text-center font-bold text-[9px]">
+            <p class="mb-0.5">الختم الرسمي / Official Stamp</p>
+            <img src="https://mtcit988.github.io/rowadcommand/stamp.png" alt="ختم دائرة الطرق بمحافظة البريمي" class="official-stamp" id="pdf-stamp-img">
+        </div>
     </div>
 </div>
 
@@ -1632,6 +1632,21 @@
                     <td class="border border-slate-900 p-1 text-center font-bold">${Number(item.total || 0).toFixed(3)}</td>
                 </tr>
             `).join('');
+            .stamp-container {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+            .official-stamp {
+    width: 95px !important;       /* حجم مناسب واضح للختم */
+    height: auto !important;
+    max-height: 95px !important;
+    object-fit: contain;
+    margin: 5px auto 0 auto;
+    display: block;
+}
             const stampImg = document.getElementById('pdf-stamp-img');
         if (stampImg && !stampImg.complete) {
             await new Promise((resolve) => {
