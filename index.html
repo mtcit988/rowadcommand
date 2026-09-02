@@ -1117,10 +1117,65 @@
             showToast(currentLang === 'ar' ? `تم اعتماد الطلب وانتقاله إلى: ${stage}` : `Stage updated to: ${stage}`);
         }
 
+        async function convertSvgImagesForPdf(element) {
+            const images = Array.from(element.querySelectorAll('img'));
+
+            for (const img of images) {
+                const src = img.getAttribute('src');
+                if (!src || !/\.svg(?:[?#]|$)/i.test(src)) continue;
+
+                try {
+                    const response = await fetch(src, {
+                        mode: 'cors',
+                        cache: 'no-cache'
+                    });
+                    if (!response.ok) throw new Error(`SVG HTTP ${response.status}`);
+
+                    const svgText = await response.text();
+                    const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+                    const blobUrl = URL.createObjectURL(svgBlob);
+
+                    await new Promise((resolve, reject) => {
+                        const tempImage = new Image();
+                        tempImage.onload = () => {
+                            try {
+                                const width = tempImage.naturalWidth || 1200;
+                                const height = tempImage.naturalHeight || 600;
+                                const scale = 3;
+                                const canvas = document.createElement('canvas');
+                                canvas.width = Math.ceil(width * scale);
+                                canvas.height = Math.ceil(height * scale);
+                                const ctx = canvas.getContext('2d');
+                                ctx.setTransform(scale, 0, 0, scale, 0, 0);
+                                ctx.drawImage(tempImage, 0, 0, width, height);
+                                img.setAttribute('src', canvas.toDataURL('image/png'));
+                                URL.revokeObjectURL(blobUrl);
+                                resolve();
+                            } catch (err) {
+                                URL.revokeObjectURL(blobUrl);
+                                reject(err);
+                            }
+                        };
+                        tempImage.onerror = () => {
+                            URL.revokeObjectURL(blobUrl);
+                            reject(new Error('SVG render failed'));
+                        };
+                        tempImage.src = blobUrl;
+                    });
+                } catch (error) {
+                    console.warn('Could not rasterize SVG for PDF:', src, error);
+                }
+            }
+        }
+
         async function waitForPdfAssets(element) {
             if (document.fonts && document.fonts.ready) {
                 await document.fonts.ready;
             }
+
+            // Mobile browsers can partially clip externally loaded SVGs when html2canvas captures them.
+            // Convert only the PDF copy of SVG images to high-resolution PNG before rendering.
+            await convertSvgImagesForPdf(element);
 
             const images = Array.from(element.querySelectorAll('img'));
             await Promise.all(images.map(img => {
