@@ -15,9 +15,7 @@
     <!-- PDF Libraries: loaded separately so both APIs are available globally -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<footer>
-    وزارة النقل والاتصالات وتقنية المعلومات - دائرة الطرق بمحافظة البريمي - سلطنة عمان © 2026
-  </footer>
+
     <!-- Firebase SDK (Auth & Firestore) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -245,7 +243,9 @@
             </div>
         </section>
     </main>
-
+<footer class="bg-blue-950 text-slate-300 py-4 px-6 text-center text-xs border-t border-blue-900 mt-12 no-print">
+        وزارة النقل والاتصالات وتقنية المعلومات - دائرة الطرق بمحافظة البريمي - سلطنة عمان © 2026
+    </footer>
     <!-- Modal -->
     <div id="modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
         <div class="bg-white rounded-2xl max-w-4xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
