@@ -2,7 +2,12 @@
 <html lang="ar" dir="rtl" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- وسوم لدعم التثبيت كتطبيق على الهواتف الذكية -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
     <title>منصة ROWADS - نظام إدارة العمليات الطرقية</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -130,6 +135,97 @@
             width: 100%;
             border-collapse: collapse;
         }
+@media screen and (max-width: 767px) {
+    /* 1. ضبط رأس الصفحة والملاحة */
+    header {
+        padding: 0.75rem 1rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+    
+    header > div:first-child {
+        justify-content: space-between;
+    }
+    
+    header > div:last-child {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+
+    #btn-create {
+        grid-column: span 2;
+        justify-content: center;
+        padding: 0.65rem !important;
+    }
+
+    /* 2. تحسين تجربة القوائم والجداول على الهاتف (Card View) */
+    .overflow-x-auto {
+        border: none !important;
+    }
+
+    /* تحويل عناصر الجدول على الهاتف إلى بطاقات تفاعلية سهلة اللمس */
+    #main-table-el thead {
+        display: none !important; /* إخفاء رؤوس الجدول التقليدية */
+    }
+
+    #main-table-el tbody tr {
+        display: block !important;
+        background: #ffffff;
+        margin-bottom: 0.85rem;
+        border-radius: 0.75rem;
+        padding: 0.85rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+
+    #main-table-el tbody td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0.4rem 0 !important;
+        border: none !important;
+        border-bottom: 1px dashed #f1f5f9 !important;
+        text-align: left !important;
+    }
+
+    #main-table-el tbody td:last-child {
+        border-bottom: none !important;
+        justify-content: center !important;
+        padding-top: 0.75rem !important;
+    }
+
+    /* 3. ملاءمة النافذة المنبثقة (Modal) للشاشات الصغيرة */
+    #modal > div {
+        max-height: 95vh !important;
+        padding: 1rem !important;
+        margin: 0.5rem !important;
+        border-radius: 1rem !important;
+    }
+
+    /* 4. إعدادات خريطة اللمس */
+    #map {
+        height: 260px !important;
+        border-radius: 0.75rem;
+    }
+
+    /* 5. تحسين عرض جدول بنود العقد (BOQ) على الموبايل */
+    #boq-items-body tr {
+        display: table-row !important; /* الحفاظ على الهيكل الداخلي للجدول */
+    }
+    
+    .boq-row td {
+        display: table-cell !important;
+        padding: 0.25rem !important;
+    }
+
+    /* أزرار وحقول إدخال صديقة للإبهام واللمس */
+    input, select, button {
+        min-height: 42px !important; /* الحجم الموصى به برمجياً للمس على الموبايل */
+        font-size: 14px !important;
+    }
+}
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
