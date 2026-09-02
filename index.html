@@ -131,6 +131,160 @@
             border-collapse: collapse;
         }
     </style>
+
+    <!-- ROWADS Mobile App Experience -->
+    <style id="rowads-mobile-app-css">
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        body { overflow-x: hidden; }
+        button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+        button, a, select { touch-action: manipulation; }
+        #map { min-height: 360px; }
+        .rowads-mobile-nav { display:none; }
+        @media (max-width: 767px) {
+            :root { --rowads-bottom-nav: 70px; }
+            html, body { min-height: 100%; }
+            body {
+                padding-bottom: calc(var(--rowads-bottom-nav) + env(safe-area-inset-bottom) + 18px) !important;
+                background: #f1f5f9;
+            }
+            header {
+                position: sticky !important;
+                top: 0 !important;
+                padding: 10px 12px !important;
+                min-height: 62px;
+                gap: 8px !important;
+                z-index: 40;
+            }
+            header > div:first-child { min-width: 0; flex: 1 1 auto; gap: 8px !important; }
+            header h1 { font-size: 13px !important; line-height: 1.35; white-space: nowrap; overflow:hidden; text-overflow:ellipsis; }
+            header p { font-size: 10px !important; white-space: nowrap; overflow:hidden; text-overflow:ellipsis; }
+            header > div:last-child { gap: 5px !important; flex-wrap: nowrap !important; }
+            #user-badge { display:none; }
+            #btn-create { display:none; }
+            header .bg-blue-900 { padding: 8px 9px !important; }
+            header .bg-blue-900 span { display:none; }
+            header .bg-red-500\/20 { width:38px; height:38px; padding:0 !important; display:flex; align-items:center; justify-content:center; }
+            main { margin-top: 10px !important; padding-left: 10px !important; padding-right: 10px !important; gap: 12px !important; }
+            main > section { border-radius: 16px !important; }
+            main > section:first-child { gap: 8px !important; }
+            main > section:first-child > div { padding: 11px !important; border-radius: 14px !important; }
+            main > section:first-child p { font-size: 10px !important; line-height: 1.35; }
+            main > section:first-child h2 { font-size: 20px !important; }
+            #map { height: 48vh; min-height: 300px; max-height: 480px; }
+            main > section:nth-of-type(2) { padding: 10px !important; }
+            main > section:nth-of-type(2) h2 { margin-bottom: 8px !important; font-size: 13px !important; }
+            main > section:nth-of-type(3) > div:first-child { padding: 12px !important; }
+            #table-title { font-size: 12px; line-height: 1.4; }
+            #orders-count { white-space:nowrap; padding-left:8px !important; padding-right:8px !important; }
+
+            /* Turn the work-order table into touch-friendly cards on phones. */
+            #main-table-el { display:block; width:100% !important; font-size:12px !important; }
+            #main-table-el thead { display:none; }
+            #main-table-el tbody { display:block; width:100%; }
+            #main-table-el tbody tr {
+                display:block;
+                width:100%;
+                margin:10px 0;
+                padding:8px 0;
+                background:#fff;
+                border:1px solid #e2e8f0 !important;
+                border-radius:15px;
+                box-shadow:0 2px 8px rgba(15,23,42,.05);
+            }
+            #main-table-el tbody td {
+                display:flex !important;
+                align-items:center;
+                justify-content:space-between;
+                gap:12px;
+                width:100% !important;
+                min-height:40px;
+                padding:8px 12px !important;
+                border:0 !important;
+                text-align:right !important;
+                white-space:normal !important;
+            }
+            #main-table-el tbody td::before {
+                content: attr(data-label);
+                flex:0 0 34%;
+                color:#64748b;
+                font-size:10px;
+                font-weight:800;
+            }
+            #main-table-el tbody td:first-child {
+                padding-top:11px !important;
+                color:#172554;
+                font-size:14px;
+            }
+            #main-table-el tbody td:first-child::before { color:#172554; }
+            #main-table-el tbody td:last-child {
+                display:flex !important;
+                flex-wrap:wrap;
+                justify-content:flex-start;
+                padding-top:10px !important;
+                margin-top:4px;
+                border-top:1px solid #f1f5f9 !important;
+            }
+            #main-table-el tbody td:last-child::before { width:100%; flex-basis:100%; margin-bottom:3px; }
+            #main-table-el tbody td:last-child button { min-height:42px; padding:8px 11px !important; }
+            #main-table-el tbody td[colspan] { display:block !important; text-align:center !important; }
+            #main-table-el tbody td[colspan]::before { display:none; }
+
+            /* Modal becomes a native-looking full-screen sheet. */
+            #modal { padding:0 !important; align-items:flex-end !important; }
+            #modal > div {
+                width:100% !important;
+                max-width:none !important;
+                max-height:94vh !important;
+                height:auto;
+                margin:0 !important;
+                border-radius:22px 22px 0 0 !important;
+                padding:16px !important;
+                padding-bottom:calc(20px + env(safe-area-inset-bottom)) !important;
+                overscroll-behavior:contain;
+            }
+            #modal input, #modal select, #modal textarea { min-height:44px; font-size:16px !important; }
+            #modal button { min-height:42px; }
+            #login-modal { padding:14px !important; }
+            #login-modal > div { padding:20px !important; border-radius:20px !important; }
+            #login-modal input { min-height:46px; font-size:16px !important; }
+            #toast { left:10px !important; right:10px !important; bottom:calc(var(--rowads-bottom-nav) + env(safe-area-inset-bottom) + 10px) !important; justify-content:center; }
+            footer { margin-top:20px !important; padding:12px !important; font-size:9px !important; }
+
+            /* Fixed mobile navigation gives the site an app-like interaction model. */
+            .rowads-mobile-nav {
+                position:fixed;
+                display:grid;
+                grid-template-columns:repeat(4,1fr);
+                left:0; right:0; bottom:0;
+                min-height:var(--rowads-bottom-nav);
+                padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+                background:rgba(255,255,255,.96);
+                border-top:1px solid #e2e8f0;
+                box-shadow:0 -8px 25px rgba(15,23,42,.10);
+                backdrop-filter:blur(14px);
+                -webkit-backdrop-filter:blur(14px);
+                z-index:45;
+            }
+            .rowads-mobile-nav button {
+                border:0; background:transparent; color:#64748b;
+                display:flex; flex-direction:column; align-items:center; justify-content:center;
+                gap:3px; min-width:0; border-radius:12px; font-weight:800; font-size:9px;
+            }
+            .rowads-mobile-nav button i { font-size:17px; }
+            .rowads-mobile-nav button:active { background:#f1f5f9; transform:scale(.96); }
+            .rowads-mobile-nav .mobile-add { color:#172554; }
+            .rowads-mobile-nav .mobile-add i { background:#f59e0b; color:#172554; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-top:-18px; border:4px solid #f1f5f9; box-shadow:0 4px 12px rgba(15,23,42,.18); }
+        }
+        @media (min-width: 768px) {
+            #main-table-el tbody td::before { content:none; }
+        }
+    </style>
+    <meta name="theme-color" content="#172554">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ROWADS">
+
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
@@ -190,7 +344,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto mt-6 px-4 space-y-6 no-print">
+    <main id="rowads-main" class="max-w-7xl mx-auto mt-6 px-4 space-y-6 no-print">
         <!-- Stats -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-white p-4 rounded-xl border shadow-sm">
@@ -212,7 +366,7 @@
         </section>
 
         <!-- Map -->
-        <section class="bg-white rounded-xl border shadow-sm p-4">
+        <section id="rowads-map-section" class="bg-white rounded-xl border shadow-sm p-4">
             <h2 id="map-title" class="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2 mb-3">
                 <i class="fa-solid fa-map-location-dot text-amber-500"></i> خريطة مواقع العمل
             </h2>
@@ -220,7 +374,7 @@
         </section>
 
         <!-- Table -->
-        <section class="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <section id="rowads-orders-section" class="bg-white rounded-xl border shadow-sm overflow-hidden">
             <div class="p-4 border-b bg-slate-50 font-bold text-slate-800 flex justify-between items-center">
                 <span id="table-title">سجل أوامر العمل ومسار الموافقات المؤسسية</span>
                 <span id="orders-count" class="text-xs bg-slate-200 text-slate-800 px-3 py-1 rounded-full font-bold">جاري التحميل...</span>
@@ -243,6 +397,15 @@
             </div>
         </section>
     </main>
+
+    <!-- Mobile app navigation -->
+    <nav class="rowads-mobile-nav no-print" aria-label="ROWADS mobile navigation">
+        <button type="button" onclick="rowadsMobileGo('top')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button>
+        <button type="button" onclick="rowadsMobileGo('map')"><i class="fa-solid fa-map-location-dot"></i><span>الخريطة</span></button>
+        <button type="button" class="mobile-add" onclick="openModalForCreate()"><i class="fa-solid fa-plus"></i><span>أمر جديد</span></button>
+        <button type="button" onclick="rowadsMobileGo('orders')"><i class="fa-solid fa-list-check"></i><span>الأوامر</span></button>
+    </nav>
+
 <footer class="bg-blue-950 text-slate-300 py-4 px-6 text-center text-xs border-t border-blue-900 mt-12 no-print">
         وزارة النقل والاتصالات وتقنية المعلومات - دائرة الطرق بمحافظة البريمي - سلطنة عمان © 2026
     </footer>
@@ -1576,14 +1739,40 @@
                     </tr>
                 `;
             }).join('');
+            applyMobileTableLabels();
         }
+
+        function applyMobileTableLabels() {
+            const table = document.getElementById('main-table-el');
+            if (!table) return;
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.innerText.trim());
+            table.querySelectorAll('tbody tr').forEach(row => {
+                Array.from(row.children).forEach((cell, index) => {
+                    if (cell.hasAttribute('colspan')) return;
+                    cell.setAttribute('data-label', headers[index] || '');
+                });
+            });
+        }
+
+        function rowadsMobileGo(target) {
+            const map = { top: 'rowads-main', map: 'rowads-map-section', orders: 'rowads-orders-section' };
+            const el = document.getElementById(map[target]);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 767 && typeof map !== 'undefined' && map) {
+                setTimeout(() => map.invalidateSize(), 150);
+            }
+        });
 
         window.onload = () => { 
             const savedLang = localStorage.getItem('rowads_lang_unified');
             if (savedLang) currentLang = savedLang;
             applyLanguage();
 
-            initMap(); 
+            initMap();
+            setTimeout(() => { if (typeof map !== 'undefined' && map) map.invalidateSize(); }, 300);
             setupFirebaseRealtime();
         };
     </script>
