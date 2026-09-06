@@ -475,7 +475,10 @@
                     </div>
                     <div>
                         <label id="delegation-person-label" class="text-xs font-bold text-slate-700 block mb-1">اسم الموظف المكلف / المفوض *</label>
-                        <input id="delegation-target-name" type="text" required class="w-full border p-2 rounded-lg text-sm bg-white" placeholder="الاسم كما يظهر في حساب ROWADS">
+                        <select id="delegation-target-name" required class="w-full border p-2 rounded-lg text-sm bg-white">
+                            <option value="">جاري تحميل مستخدمي ROWADS...</option>
+                        </select>
+                        <p id="delegation-user-hint" class="text-[10px] text-slate-500 mt-1">يتم عرض الحسابات المسجلة في نظام ROWADS فقط.</p>
                     </div>
                     <div>
                         <label class="text-xs font-bold text-slate-700 block mb-1">من تاريخ *</label>
@@ -938,6 +941,7 @@
         let map, markersGroup;
         let globalOrders = [];
         let globalDelegations = [];
+        let globalUsers = [];
         let currentUser = { name: '', role: '' };
         let currentLang = 'ar';
 
@@ -1257,6 +1261,90 @@
             return (currentLang === 'ar' ? ar : en)[permission] || permission;
         }
 
+
+        function userRoleLabel(role) {
+            const ar = { employee:'موظف', head:'رئيس القسم', director:'مدير الدائرة' };
+            const en = { employee:'Employee', head:'Head Section', director:'Director' };
+            return (currentLang === 'ar' ? ar : en)[role] || role || '';
+        }
+
+        function eligibleDelegationUsers(type) {
+            // Never allow a user to delegate/assign to the same signed-in account.
+            const others = globalUsers.filter(u => {
+                const sameUid = currentUser.uid && u.uid && String(u.uid) === String(currentUser.uid);
+                const sameName = normalizedName(u.name || '') === normalizedName(currentUser.name || '');
+                return !sameUid && !sameName && u.name;
+            });
+
+            if (type === 'head_delegate') {
+                // Head Section delegates only to normal employees.
+                return others.filter(u => u.role === 'employee');
+            }
+            if (type === 'director_to_head') {
+                // Director delegates his final signature to a registered Head Section.
+                return others.filter(u => u.role === 'head');
+            }
+            if (type === 'acting_head') {
+                // Acting Head may be selected from employees or existing heads.
+                return others.filter(u => u.role === 'employee' || u.role === 'head');
+            }
+            if (type === 'deputy_director') {
+                // Deputy Director should normally be a Head Section; keep director-role accounts eligible too.
+                return others.filter(u => u.role === 'head' || u.role === 'director');
+            }
+            return others;
+        }
+
+        function refreshDelegationUserOptions() {
+            const select = document.getElementById('delegation-target-name');
+            const hint = document.getElementById('delegation-user-hint');
+            const type = document.getElementById('delegation-type')?.value || '';
+            if (!select) return;
+
+            const previousUid = select.selectedOptions[0]?.dataset?.uid || '';
+            const previousName = select.value || '';
+            const users = eligibleDelegationUsers(type)
+                .slice()
+                .sort((a,b) => String(a.name||'').localeCompare(String(b.name||''), currentLang === 'ar' ? 'ar' : 'en'));
+
+            const placeholder = currentLang === 'ar' ? 'اختر الموظف / المسؤول من القائمة' : 'Select employee / officer';
+            select.innerHTML = `<option value="">${placeholder}</option>` + users.map(u => {
+                const name = String(u.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+                const uid = String(u.uid || u.firestoreId || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+                const role = userRoleLabel(u.role);
+                return `<option value="${name}" data-uid="${uid}" data-role="${u.role||''}">${name}${role ? ' — ' + role : ''}</option>`;
+            }).join('');
+
+            let restored = false;
+            if (previousUid) {
+                const opt = [...select.options].find(o => o.dataset.uid === previousUid);
+                if (opt) { opt.selected = true; restored = true; }
+            }
+            if (!restored && previousName) {
+                const opt = [...select.options].find(o => o.value === previousName);
+                if (opt) opt.selected = true;
+            }
+
+            if (hint) {
+                if (!globalUsers.length) {
+                    hint.innerText = currentLang === 'ar'
+                        ? 'لم يتم تحميل قائمة المستخدمين بعد. تأكد من أن حسابك يملك صلاحية قراءة مجموعة users في Firestore.'
+                        : 'Users list is not available yet. Ensure this account can read the users collection in Firestore.';
+                    hint.className = 'text-[10px] text-amber-600 mt-1 font-bold';
+                } else if (!users.length) {
+                    hint.innerText = currentLang === 'ar'
+                        ? 'لا توجد حسابات مناسبة لهذا النوع من التفويض حسب الأدوار المسجلة.'
+                        : 'No eligible accounts are registered for this delegation type.';
+                    hint.className = 'text-[10px] text-amber-600 mt-1 font-bold';
+                } else {
+                    hint.innerText = currentLang === 'ar'
+                        ? `يعرض النظام ${users.length} حساب/حسابات مناسبة ومسجلة في ROWADS.`
+                        : `${users.length} eligible ROWADS account(s) available.`;
+                    hint.className = 'text-[10px] text-slate-500 mt-1';
+                }
+            }
+        }
+
         function openDelegationManager() {
             if (currentUser.role !== 'head' && currentUser.role !== 'director') {
                 showToast(currentLang === 'ar' ? 'هذه الخاصية لرئيس القسم ومدير الدائرة فقط' : 'This feature is for Head Section and Director only', true);
@@ -1285,6 +1373,7 @@
             if (type === 'head_delegate' || type === 'acting_head') options = [['head_approve', currentLang==='ar'?'اعتماد أوامر العمل كرئيس قسم':'Approve as Head Section'], ['review', currentLang==='ar'?'المراجعة والمتابعة':'Review & follow-up'], ['reports', currentLang==='ar'?'عرض التقارير':'View reports']];
             if (type === 'director_to_head' || type === 'deputy_director') options = [['director_approve', currentLang==='ar'?'الاعتماد النهائي والتوقيع نيابة عن المدير':'Final approval/signing for Director'], ['review', currentLang==='ar'?'المراجعة والمتابعة':'Review & follow-up'], ['reports', currentLang==='ar'?'عرض التقارير':'View reports']];
             perms.innerHTML = options.map((p,i) => `<label class="flex items-center gap-2 bg-white border rounded-full px-3 py-2 text-xs font-bold"><input type="checkbox" class="delegation-permission" value="${p[0]}" ${i===0?'checked':''}> ${p[1]}</label>`).join('');
+            refreshDelegationUserOptions();
         }
 
         function clearDelegationForm() {
@@ -1294,13 +1383,17 @@
 
         async function saveDelegationRecord() {
             const type = document.getElementById('delegation-type').value;
-            const targetName = document.getElementById('delegation-target-name').value.trim();
+            const targetSelect = document.getElementById('delegation-target-name');
+            const targetName = targetSelect.value.trim();
+            const selectedTargetOption = targetSelect.selectedOptions[0];
+            const targetUid = selectedTargetOption?.dataset?.uid || '';
+            const targetRole = selectedTargetOption?.dataset?.role || '';
             const fromDate = document.getElementById('delegation-from').value;
             const toDate = document.getElementById('delegation-to').value;
             const reason = document.getElementById('delegation-reason').value.trim();
             const permissions = [...document.querySelectorAll('.delegation-permission:checked')].map(x => x.value);
             if (!targetName || !fromDate || !toDate || permissions.length === 0) {
-                showToast(currentLang === 'ar' ? 'أكمل اسم الموظف والفترة والصلاحيات' : 'Complete employee name, dates, and permissions', true); return;
+                showToast(currentLang === 'ar' ? 'اختر الموظف من القائمة وأكمل الفترة والصلاحيات' : 'Select an employee and complete dates and permissions', true); return;
             }
             if (new Date(fromDate) > new Date(toDate)) {
                 showToast(currentLang === 'ar' ? 'تاريخ البداية يجب أن يسبق تاريخ النهاية' : 'Start date must be before end date', true); return;
@@ -1314,7 +1407,7 @@
             try {
                 const { addDoc, collection } = window.firestoreTools;
                 await addDoc(collection(window.db, 'delegations'), {
-                    type, targetName, targetNameNormalized: normalizedName(targetName), fromDate, toDate, reason, permissions,
+                    type, targetName, targetNameNormalized: normalizedName(targetName), targetUid, targetRole, fromDate, toDate, reason, permissions,
                     createdBy: currentUser.name, createdByUid: currentUser.uid || '', createdByRole: currentUser.role,
                     createdAt: new Date().toISOString(), cancelled: false
                 });
@@ -1362,6 +1455,17 @@
                 snapshot.forEach((docSnap) => globalOrders.push({ firestoreId: docSnap.id, ...docSnap.data() }));
                 render();
             });
+
+            onSnapshot(query(collection(window.db, "users")), (snapshot) => {
+                globalUsers = [];
+                snapshot.forEach((docSnap) => globalUsers.push({ uid: docSnap.id, firestoreId: docSnap.id, ...docSnap.data() }));
+                refreshDelegationUserOptions();
+            }, (error) => {
+                console.warn('Users list listener unavailable:', error);
+                globalUsers = [];
+                refreshDelegationUserOptions();
+            });
+
             onSnapshot(query(collection(window.db, "delegations")), (snapshot) => {
                 globalDelegations = [];
                 snapshot.forEach((docSnap) => globalDelegations.push({ firestoreId: docSnap.id, ...docSnap.data() }));
