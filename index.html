@@ -379,6 +379,9 @@
                 <i class="fa-solid fa-user-shield text-amber-400"></i>
                 <span id="current-user-display">---</span>
             </div>
+            <button id="btn-delegations" onclick="openDelegationManager()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition items-center gap-2" title="إدارة التفويضات والتكليفات">
+                <i class="fa-solid fa-user-shield"></i> <span id="txt-delegations-btn">التفويضات والتكليفات</span>
+            </button>
             <button onclick="logout()" class="bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition" title="خروج">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
@@ -453,6 +456,70 @@
 <footer class="bg-blue-950 text-slate-300 py-4 px-6 text-center text-xs border-t border-blue-900 mt-12 no-print">
         وزارة النقل والاتصالات وتقنية المعلومات - دائرة الطرق بمحافظة البريمي - سلطنة عمان © 2026
     </footer>
+    <!-- Delegation / Assignment Manager -->
+    <div id="delegation-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-[60] no-print">
+        <div class="bg-white rounded-2xl max-w-5xl w-full p-6 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 id="delegation-modal-title" class="text-base md:text-lg font-black text-blue-950">إدارة التفويضات والتكليفات</h3>
+                    <p id="delegation-modal-subtitle" class="text-xs text-slate-500 mt-1">صلاحيات مؤقتة مرتبطة بتاريخ بداية ونهاية</p>
+                </div>
+                <button type="button" onclick="closeDelegationManager()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <div id="delegation-form-card" class="bg-slate-50 border rounded-xl p-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label id="delegation-type-label" class="text-xs font-bold text-slate-700 block mb-1">نوع الإجراء</label>
+                        <select id="delegation-type" onchange="refreshDelegationForm()" class="w-full border p-2 rounded-lg text-sm bg-white"></select>
+                    </div>
+                    <div>
+                        <label id="delegation-person-label" class="text-xs font-bold text-slate-700 block mb-1">اسم الموظف المكلف / المفوض *</label>
+                        <input id="delegation-target-name" type="text" required class="w-full border p-2 rounded-lg text-sm bg-white" placeholder="الاسم كما يظهر في حساب ROWADS">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">من تاريخ *</label>
+                        <input id="delegation-from" type="date" class="w-full border p-2 rounded-lg text-sm bg-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1">إلى تاريخ *</label>
+                        <input id="delegation-to" type="date" class="w-full border p-2 rounded-lg text-sm bg-white">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-2">الصلاحيات</label>
+                    <div id="delegation-permissions" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-700 block mb-1">سبب التفويض / التكليف</label>
+                    <textarea id="delegation-reason" rows="2" class="w-full border p-2 rounded-lg text-sm bg-white" placeholder="مثال: إجازة، مهمة رسمية، تكليف مؤقت..."></textarea>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="saveDelegationRecord()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-black shadow"><i class="fa-solid fa-floppy-disk ml-1"></i> حفظ وإصدار</button>
+                    <button type="button" onclick="clearDelegationForm()" class="bg-white hover:bg-slate-100 border text-slate-700 px-4 py-2 rounded-lg text-xs font-bold">مسح</button>
+                </div>
+            </div>
+
+            <div class="border rounded-xl overflow-hidden">
+                <div class="bg-blue-950 text-white px-4 py-3 flex items-center justify-between">
+                    <span class="font-bold text-sm"><i class="fa-solid fa-clock-rotate-left ml-2 text-amber-400"></i>سجل التفويضات والتكليفات</span>
+                    <span id="delegation-count" class="text-xs bg-white/10 px-2 py-1 rounded">0</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-100 text-slate-700">
+                            <tr><th class="p-3">النوع</th><th class="p-3">الموظف</th><th class="p-3">الصلاحيات</th><th class="p-3">الفترة</th><th class="p-3">بواسطة</th><th class="p-3">الحالة</th><th class="p-3 text-center">إجراء</th></tr>
+                        </thead>
+                        <tbody id="delegations-table" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal -->
     <div id="modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-50 no-print">
         <div class="bg-white rounded-2xl max-w-4xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
@@ -870,6 +937,7 @@
         ];
         let map, markersGroup;
         let globalOrders = [];
+        let globalDelegations = [];
         let currentUser = { name: '', role: '' };
         let currentLang = 'ar';
 
@@ -1043,13 +1111,33 @@
                 ar: { employee: 'موظف', head: 'رئيس القسم', director: 'مدير الدائرة' },
                 en: { employee: 'Employee', head: 'Head Section', director: 'Director' }
             };
-            document.getElementById('current-user-display').innerText = `${currentUser.name} (${roleNames[currentLang][currentUser.role]})`;
+            const baseRoleName = roleNames[currentLang][currentUser.role] || currentUser.role || '---';
+            let actingLabel = '';
+            if (currentUser.role !== 'director' && canActAsDirector()) {
+                const dirDel = currentActiveDelegations().find(r => Array.isArray(r.permissions) && r.permissions.includes('director_approve'));
+                actingLabel = (dirDel && dirDel.type === 'director_to_head')
+                    ? (currentLang === 'ar' ? ' - مفوض بالاعتماد نيابة عن المدير' : ' - Delegated to approve for Director')
+                    : (currentLang === 'ar' ? ' - مدير نائب مكلف' : ' - Acting Deputy Director');
+            }
+            else if (currentUser.role !== 'head' && canActAsHead()) actingLabel = currentLang === 'ar' ? ' - مفوض/مكلف كرئيس قسم' : ' - Acting/Delegated Head';
+            document.getElementById('current-user-display').innerText = `${currentUser.name} (${baseRoleName}${actingLabel})`;
             
             const btnCreate = document.getElementById('btn-create');
-            if (currentUser.role === 'employee') {
-                btnCreate.style.display = 'flex';
-            } else {
-                btnCreate.style.display = 'none';
+            if (currentUser.role === 'employee') btnCreate.style.display = 'flex';
+            else btnCreate.style.display = 'none';
+
+            const delegationBtn = document.getElementById('btn-delegations');
+            if (delegationBtn) {
+                if (currentUser.role === 'head' || currentUser.role === 'director') {
+                    delegationBtn.classList.remove('hidden');
+                    delegationBtn.classList.add('flex');
+                    document.getElementById('txt-delegations-btn').innerText = currentUser.role === 'head'
+                        ? (currentLang === 'ar' ? 'تفويض موظف' : 'Delegate Employee')
+                        : (currentLang === 'ar' ? 'التكليفات والتفويضات' : 'Assignments & Delegations');
+                } else {
+                    delegationBtn.classList.add('hidden');
+                    delegationBtn.classList.remove('flex');
+                }
             }
             render();
         }
@@ -1102,6 +1190,170 @@
             });
         }
 
+        function normalizedName(value) {
+            return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        }
+
+        function delegationIsActive(record) {
+            if (!record || record.cancelled === true || record.status === 'cancelled') return false;
+            const today = new Date(); today.setHours(0,0,0,0);
+            const from = record.fromDate ? new Date(record.fromDate + 'T00:00:00') : null;
+            const to = record.toDate ? new Date(record.toDate + 'T23:59:59') : null;
+            return (!from || today >= from) && (!to || today <= to);
+        }
+
+        function recordBelongsToCurrentUser(record) {
+            if (!record || !currentUser.name) return false;
+            if (record.targetUid && currentUser.uid && record.targetUid === currentUser.uid) return true;
+            return normalizedName(record.targetName) === normalizedName(currentUser.name);
+        }
+
+        function currentActiveDelegations() {
+            return globalDelegations.filter(r => delegationIsActive(r) && recordBelongsToCurrentUser(r));
+        }
+
+        function hasDelegatedPermission(permission) {
+            return currentActiveDelegations().some(r => Array.isArray(r.permissions) && r.permissions.includes(permission));
+        }
+
+        function canActAsHead() {
+            return currentUser.role === 'head' || hasDelegatedPermission('head_approve');
+        }
+
+        function activeDirectorApprovalDelegations() {
+            return globalDelegations.filter(r => delegationIsActive(r) && Array.isArray(r.permissions) && r.permissions.includes('director_approve'));
+        }
+
+        function directorApprovalIsDelegated() {
+            return activeDirectorApprovalDelegations().length > 0;
+        }
+
+        function currentUserIsDirectorDelegate() {
+            return activeDirectorApprovalDelegations().some(r => recordBelongsToCurrentUser(r));
+        }
+
+        function canActAsDirector() {
+            // When the director has an active delegation for final approval, the routed
+            // approval belongs to the named delegate only. The director regains it when
+            // the delegation expires or is cancelled.
+            if (currentUser.role === 'director') return !directorApprovalIsDelegated();
+            return currentUserIsDirectorDelegate();
+        }
+
+        function directorDelegateName() {
+            const r = activeDirectorApprovalDelegations()[0];
+            return r ? (r.targetName || '') : '';
+        }
+
+        function delegationTypeLabel(type) {
+            const ar = { head_delegate:'تفويض موظف عن رئيس القسم', acting_head:'تكليف رئيس قسم', director_to_head:'تفويض رئيس القسم بالاعتماد نيابة عن المدير', deputy_director:'تكليف مدير نائب' };
+            const en = { head_delegate:'Head Delegate', acting_head:'Acting Head', director_to_head:'Delegate Head to approve for Director', deputy_director:'Deputy Director' };
+            return (currentLang === 'ar' ? ar : en)[type] || type;
+        }
+
+        function permissionLabel(permission) {
+            const ar = { head_approve:'اعتماد رئيس القسم', director_approve:'الاعتماد النهائي والتوقيع نيابة عن المدير', review:'المراجعة والمتابعة', reports:'عرض التقارير' };
+            const en = { head_approve:'Head approval', director_approve:'Director final approval', review:'Review & follow-up', reports:'Reports' };
+            return (currentLang === 'ar' ? ar : en)[permission] || permission;
+        }
+
+        function openDelegationManager() {
+            if (currentUser.role !== 'head' && currentUser.role !== 'director') {
+                showToast(currentLang === 'ar' ? 'هذه الخاصية لرئيس القسم ومدير الدائرة فقط' : 'This feature is for Head Section and Director only', true);
+                return;
+            }
+            refreshDelegationForm();
+            renderDelegationsTable();
+            document.getElementById('delegation-modal').classList.remove('hidden');
+        }
+
+        function closeDelegationManager() { document.getElementById('delegation-modal').classList.add('hidden'); }
+
+        function refreshDelegationForm() {
+            const typeSelect = document.getElementById('delegation-type');
+            if (!typeSelect) return;
+            const old = typeSelect.value;
+            if (currentUser.role === 'head') {
+                typeSelect.innerHTML = `<option value="head_delegate">${currentLang === 'ar' ? 'تفويض موظف عن رئيس القسم' : 'Delegate employee for Head Section'}</option>`;
+            } else if (currentUser.role === 'director') {
+                typeSelect.innerHTML = `<option value="acting_head">${currentLang === 'ar' ? 'تكليف رئيس قسم' : 'Assign Acting Head'}</option><option value="director_to_head">${currentLang === 'ar' ? 'تفويض رئيس القسم بالاعتماد والتوقيع نيابة عن المدير' : 'Delegate Head to approve/sign for Director'}</option><option value="deputy_director">${currentLang === 'ar' ? 'تكليف مدير نائب' : 'Assign Deputy Director'}</option>`;
+            }
+            if ([...typeSelect.options].some(o => o.value === old)) typeSelect.value = old;
+            const type = typeSelect.value;
+            const perms = document.getElementById('delegation-permissions');
+            let options = [];
+            if (type === 'head_delegate' || type === 'acting_head') options = [['head_approve', currentLang==='ar'?'اعتماد أوامر العمل كرئيس قسم':'Approve as Head Section'], ['review', currentLang==='ar'?'المراجعة والمتابعة':'Review & follow-up'], ['reports', currentLang==='ar'?'عرض التقارير':'View reports']];
+            if (type === 'director_to_head' || type === 'deputy_director') options = [['director_approve', currentLang==='ar'?'الاعتماد النهائي والتوقيع نيابة عن المدير':'Final approval/signing for Director'], ['review', currentLang==='ar'?'المراجعة والمتابعة':'Review & follow-up'], ['reports', currentLang==='ar'?'عرض التقارير':'View reports']];
+            perms.innerHTML = options.map((p,i) => `<label class="flex items-center gap-2 bg-white border rounded-full px-3 py-2 text-xs font-bold"><input type="checkbox" class="delegation-permission" value="${p[0]}" ${i===0?'checked':''}> ${p[1]}</label>`).join('');
+        }
+
+        function clearDelegationForm() {
+            ['delegation-target-name','delegation-from','delegation-to','delegation-reason'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+            refreshDelegationForm();
+        }
+
+        async function saveDelegationRecord() {
+            const type = document.getElementById('delegation-type').value;
+            const targetName = document.getElementById('delegation-target-name').value.trim();
+            const fromDate = document.getElementById('delegation-from').value;
+            const toDate = document.getElementById('delegation-to').value;
+            const reason = document.getElementById('delegation-reason').value.trim();
+            const permissions = [...document.querySelectorAll('.delegation-permission:checked')].map(x => x.value);
+            if (!targetName || !fromDate || !toDate || permissions.length === 0) {
+                showToast(currentLang === 'ar' ? 'أكمل اسم الموظف والفترة والصلاحيات' : 'Complete employee name, dates, and permissions', true); return;
+            }
+            if (new Date(fromDate) > new Date(toDate)) {
+                showToast(currentLang === 'ar' ? 'تاريخ البداية يجب أن يسبق تاريخ النهاية' : 'Start date must be before end date', true); return;
+            }
+            if (currentUser.role === 'head' && type !== 'head_delegate') {
+                showToast(currentLang === 'ar' ? 'رئيس القسم يمكنه تفويض موظف فقط' : 'Head Section can delegate employees only', true); return;
+            }
+            if (currentUser.role === 'director' && !['acting_head','director_to_head','deputy_director'].includes(type)) {
+                showToast(currentLang === 'ar' ? 'نوع التكليف غير مسموح للمدير' : 'Assignment type is not allowed', true); return;
+            }
+            try {
+                const { addDoc, collection } = window.firestoreTools;
+                await addDoc(collection(window.db, 'delegations'), {
+                    type, targetName, targetNameNormalized: normalizedName(targetName), fromDate, toDate, reason, permissions,
+                    createdBy: currentUser.name, createdByUid: currentUser.uid || '', createdByRole: currentUser.role,
+                    createdAt: new Date().toISOString(), cancelled: false
+                });
+                clearDelegationForm();
+                showToast(currentLang === 'ar' ? 'تم إصدار التفويض/التكليف بنجاح' : 'Delegation/assignment issued successfully');
+            } catch (err) {
+                console.error('delegation save failed', err);
+                showToast(currentLang === 'ar' ? 'تعذر حفظ التفويض. تحقق من صلاحيات Firestore لمجموعة delegations' : 'Could not save delegation. Check Firestore rules for delegations collection', true);
+            }
+        }
+
+        async function cancelDelegationRecord(id) {
+            if (!confirm(currentLang === 'ar' ? 'هل تريد إلغاء هذا التفويض/التكليف؟' : 'Cancel this delegation/assignment?')) return;
+            try {
+                const { updateDoc, doc } = window.firestoreTools;
+                await updateDoc(doc(window.db, 'delegations', id), { cancelled:true, cancelledAt:new Date().toISOString(), cancelledBy:currentUser.name, cancelledByUid:currentUser.uid || '' });
+                showToast(currentLang === 'ar' ? 'تم إلغاء التفويض/التكليف' : 'Delegation/assignment cancelled');
+            } catch(err) {
+                console.error(err); showToast(currentLang === 'ar' ? 'تعذر إلغاء السجل' : 'Could not cancel record', true);
+            }
+        }
+
+        function renderDelegationsTable() {
+            const tbody = document.getElementById('delegations-table');
+            if (!tbody) return;
+            let records = globalDelegations.slice();
+            if (currentUser.role === 'head') records = records.filter(r => r.createdByUid === currentUser.uid || (r.createdBy === currentUser.name && r.type === 'head_delegate'));
+            records.sort((a,b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+            document.getElementById('delegation-count').innerText = String(records.length);
+            if (!records.length) { tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500 font-bold">${currentLang==='ar'?'لا توجد تفويضات أو تكليفات مسجلة':'No delegations or assignments'}</td></tr>`; return; }
+            tbody.innerHTML = records.map(r => {
+                const active = delegationIsActive(r), cancelled = r.cancelled === true;
+                const status = cancelled ? (currentLang==='ar'?'ملغى':'Cancelled') : active ? (currentLang==='ar'?'فعال':'Active') : (currentLang==='ar'?'منتهي/غير نشط':'Inactive');
+                const statusCls = cancelled ? 'bg-red-100 text-red-700' : active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600';
+                const canCancel = !cancelled && (currentUser.role === 'director' || r.createdByUid === currentUser.uid);
+                return `<tr class="hover:bg-slate-50"><td class="p-3 font-bold">${delegationTypeLabel(r.type)}</td><td class="p-3">${r.targetName||''}</td><td class="p-3">${(r.permissions||[]).map(permissionLabel).join('، ')}</td><td class="p-3 whitespace-nowrap">${r.fromDate||''}<br>${r.toDate||''}</td><td class="p-3">${r.createdBy||''}</td><td class="p-3"><span class="${statusCls} px-2 py-1 rounded-full font-bold">${status}</span></td><td class="p-3 text-center">${canCancel?`<button onclick="cancelDelegationRecord('${r.firestoreId}')" class="bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded font-bold">${currentLang==='ar'?'إلغاء':'Cancel'}</button>`:'—'}</td></tr>`;
+            }).join('');
+        }
+
         function setupFirebaseRealtime() {
             if (!window.firestoreTools) { setTimeout(setupFirebaseRealtime, 200); return; }
             const { collection, onSnapshot, query } = window.firestoreTools;
@@ -1109,6 +1361,16 @@
                 globalOrders = [];
                 snapshot.forEach((docSnap) => globalOrders.push({ firestoreId: docSnap.id, ...docSnap.data() }));
                 render();
+            });
+            onSnapshot(query(collection(window.db, "delegations")), (snapshot) => {
+                globalDelegations = [];
+                snapshot.forEach((docSnap) => globalDelegations.push({ firestoreId: docSnap.id, ...docSnap.data() }));
+                if (currentUser.name) applyRolePermissions();
+                renderDelegationsTable();
+            }, (error) => {
+                console.warn('Delegations listener unavailable:', error);
+                globalDelegations = [];
+                if (currentUser.name) applyRolePermissions();
             });
         }
 
@@ -1288,12 +1550,14 @@
             const o = globalOrders.find(item => item.firestoreId === firestoreId);
             if (!o) return;
 
-            if (currentUser.role === 'employee') {
-                showToast(currentLang === 'ar' ? 'لا تمتلك صلاحية الاعتماد' : 'Employees do not have approval privileges', true);
+            const isFinalApproval = (nextStage === 'معتمد نهائياً' || nextStage === 'Fully Approved');
+            if (isFinalApproval && !canActAsDirector()) {
+                const delegatedTo = directorDelegateName();
+                showToast(currentLang === 'ar' ? (delegatedTo ? `الاعتماد النهائي مفوض حالياً إلى ${delegatedTo}` : 'الاعتماد النهائي يتطلب صلاحية المدير أو المفوض/المدير النائب المكلف') : (delegatedTo ? `Final approval is currently delegated to ${delegatedTo}` : 'Final approval requires Director or delegated/assigned authority'), true);
                 return;
             }
-            if (currentUser.role === 'head' && (nextStage === 'معتمد نهائياً' || nextStage === 'Fully Approved')) {
-                showToast(currentLang === 'ar' ? 'الاعتماد النهائي مخصص لمدير الدائرة فقط' : 'Final approval is restricted to the Department Director', true);
+            if (!isFinalApproval && !canActAsHead()) {
+                showToast(currentLang === 'ar' ? 'هذه المرحلة تتطلب صلاحية رئيس القسم أو الموظف المفوض/المكلف' : 'This stage requires Head Section or delegated/assigned Head authority', true);
                 return;
             }
 
@@ -1317,14 +1581,18 @@
 
             let updatePayload = { approvalStage: stage };
 
-            if (currentUser.role === 'head') {
-                sigs.headSection = true;
-                o.headDetails = { name: approverName, signatureUrl: signatureUrl };
-                updatePayload.headDetails = o.headDetails;
-            } else if (currentUser.role === 'director') {
+            if (isFinalApproval && canActAsDirector()) {
                 sigs.director = true;
-                o.directorDetails = { name: approverName, signatureUrl: signatureUrl };
+                const acting = currentUser.role !== 'director';
+                const dirDelegation = currentActiveDelegations().find(r => Array.isArray(r.permissions) && r.permissions.includes('director_approve'));
+                const capacity = acting ? ((dirDelegation && dirDelegation.type === 'director_to_head') ? 'director_delegated_head' : 'deputy_director') : 'director';
+                o.directorDetails = { name: approverName, signatureUrl: signatureUrl, acting: acting, capacity: capacity, delegatedBy: dirDelegation ? dirDelegation.createdBy || '' : '' };
                 updatePayload.directorDetails = o.directorDetails;
+            } else if (!isFinalApproval && canActAsHead()) {
+                sigs.headSection = true;
+                const acting = currentUser.role !== 'head';
+                o.headDetails = { name: approverName, signatureUrl: signatureUrl, acting: acting, capacity: acting ? 'delegated_or_acting_head' : 'head' };
+                updatePayload.headDetails = o.headDetails;
             }
 
             updatePayload.signatures = sigs;
@@ -1761,7 +2029,7 @@
                 let approvalButtons = '';
                 const stageStr = o.approvalStage || '';
                 if (stageStr.includes('رئيس القسم') || stageStr.includes('Head Section')) {
-                    if (currentUser.role === 'head') {
+                    if (canActAsHead()) {
                         const nextTxt = currentLang === 'ar' ? 'موافقة رئيس القسم' : 'Head Section Approve';
                         const targetStage = currentLang === 'ar' ? 'مراجعة المدير' : 'Director Review';
                         approvalButtons = `<button onclick="advanceApproval('${o.firestoreId}', '${targetStage}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow">${nextTxt}</button>`;
@@ -1769,12 +2037,13 @@
                         approvalButtons = `<span class="text-xs text-amber-600 font-bold">${currentLang==='ar'?'بانتظار اعتماد رئيس القسم':'Pending Head Section'}</span>`;
                     }
                 } else if (stageStr.includes('المدير') || stageStr.includes('Director')) {
-                    if (currentUser.role === 'director') {
+                    if (canActAsDirector()) {
                         const nextTxt = currentLang === 'ar' ? 'الاعتماد النهائي والتوقيع' : 'Director Final Sign';
                         const targetStage = currentLang === 'ar' ? 'معتمد نهائياً' : 'Fully Approved';
                         approvalButtons = `<button onclick="advanceApproval('${o.firestoreId}', '${targetStage}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow">${nextTxt}</button>`;
                     } else {
-                        approvalButtons = `<span class="text-xs text-blue-600 font-bold">${currentLang==='ar'?'بانتظار اعتماد المدير':'Pending Director'}</span>`;
+                        const delegatedTo = directorDelegateName();
+                        approvalButtons = `<span class="text-xs text-blue-600 font-bold">${delegatedTo ? (currentLang==='ar' ? `بانتظار اعتماد ${delegatedTo} نيابة عن المدير` : `Pending ${delegatedTo} on behalf of Director`) : (currentLang==='ar'?'بانتظار اعتماد المدير':'Pending Director')}</span>`;
                     }
                 } else if (stageStr.includes('معتمد نهائياً') || stageStr.includes('Fully Approved')) {
                     const printTxt = currentLang === 'ar' ? 'طباعة الوثيقة الموقعة' : 'Print Signed PDF';
