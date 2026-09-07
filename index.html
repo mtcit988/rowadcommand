@@ -1794,9 +1794,13 @@
         }
 
 
+        function rowadsRoleRank(role) {
+            return { employee: 1, head: 2, assistant_manager: 3, director: 4 }[role] || 0;
+        }
+
         function userRoleLabel(role) {
-            const ar = { employee:'موظف', head:'رئيس القسم', director:'مدير الدائرة' };
-            const en = { employee:'Employee', head:'Head Section', director:'Director' };
+            const ar = { employee:'موظف', head:'رئيس القسم', assistant_manager:'مدير مساعد', director:'مدير الدائرة' };
+            const en = { employee:'Employee', head:'Head Section', assistant_manager:'Assistant Manager', director:'Director' };
             return (currentLang === 'ar' ? ar : en)[role] || role || '';
         }
 
@@ -1813,16 +1817,16 @@
                 return others.filter(u => u.role === 'employee');
             }
             if (type === 'director_to_head') {
-                // Director delegates his final signature to a registered Head Section.
-                return others.filter(u => u.role === 'head');
+                // Director may delegate final approval/signature to an Assistant Manager or Head Section.
+                return others.filter(u => u.role === 'assistant_manager' || u.role === 'head');
             }
             if (type === 'acting_head') {
                 // Acting Head may be selected from employees or existing heads.
                 return others.filter(u => u.role === 'employee' || u.role === 'head');
             }
             if (type === 'deputy_director') {
-                // Deputy Director should normally be a Head Section; keep director-role accounts eligible too.
-                return others.filter(u => u.role === 'head' || u.role === 'director');
+                // Assistant Manager is eligible for deputy/acting director assignment.
+                return others.filter(u => u.role === 'assistant_manager' || u.role === 'head' || u.role === 'director');
             }
             return others;
         }
@@ -2751,7 +2755,7 @@
             const nav = document.querySelector('.rowads-mobile-nav');
             if (!desktopBtn || !mobileBtn || !nav) return;
 
-            const allowed = currentUser && (currentUser.role === 'head' || currentUser.role === 'director');
+            const allowed = currentUser && (currentUser.role === 'head' || currentUser.role === 'assistant_manager' || currentUser.role === 'director');
             mobileBtn.classList.toggle('hidden', !allowed);
             nav.classList.toggle('has-delegation', !!allowed);
         }
