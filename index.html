@@ -927,6 +927,16 @@
         }
     </style>
 
+
+<style id="rowads-completion-v6-css">
+@media (max-width:767px){
+  #completion-modal{padding:0!important;align-items:flex-end!important}
+  #completion-modal>div{width:100%!important;max-width:none!important;height:95dvh!important;max-height:95dvh!important;border-radius:24px 24px 0 0!important;padding:0 13px calc(16px + env(safe-area-inset-bottom,0px))!important}
+  #completion-modal>div>div:first-child{margin:0 -13px 10px;padding:14px 13px 11px!important}
+  #completion-modal input,#completion-modal textarea{font-size:16px!important;min-height:46px;border-radius:11px!important}
+  #completion-modal button{min-height:44px;border-radius:11px!important}
+}
+</style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
@@ -1125,6 +1135,66 @@
                 </div>
             </div>
         </div>
+    </div>
+
+
+    <!-- Work Completion / Actual Quantities Modal -->
+    <div id="completion-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-[70] no-print">
+      <div class="bg-white rounded-2xl max-w-5xl w-full p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-3 sticky top-0 bg-white z-10">
+          <div>
+            <h3 class="text-base md:text-lg font-black text-blue-950">كشف الأعمال المنفذة / استمارة الإنجاز</h3>
+            <p id="completion-order-ref" class="text-xs text-slate-500 mt-1"></p>
+          </div>
+          <button type="button" onclick="closeCompletionModal()" class="text-slate-400 hover:text-slate-700 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+        </div>
+
+        <input type="hidden" id="completion-order-id">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50 border rounded-xl p-3">
+          <div><label class="text-xs font-bold block mb-1">رقم أمر العمل</label><input id="completion-code" readonly class="w-full border p-2 rounded-lg bg-slate-100 font-bold"></div>
+          <div><label class="text-xs font-bold block mb-1">تاريخ الإصدار</label><input id="completion-issue" readonly class="w-full border p-2 rounded-lg bg-slate-100"></div>
+          <div><label class="text-xs font-bold block mb-1">المدة</label><input id="completion-period" readonly class="w-full border p-2 rounded-lg bg-slate-100"></div>
+          <div><label class="text-xs font-bold block mb-1">تاريخ الإنجاز الفعلي *</label><input id="completion-date" type="date" class="w-full border p-2 rounded-lg bg-white"></div>
+          <div class="md:col-span-2"><label class="text-xs font-bold block mb-1">الموقع</label><input id="completion-location" readonly class="w-full border p-2 rounded-lg bg-slate-100"></div>
+          <div class="md:col-span-2"><label class="text-xs font-bold block mb-1">المقاول</label><input id="completion-contractor" readonly class="w-full border p-2 rounded-lg bg-slate-100"></div>
+          <div class="md:col-span-4"><label class="text-xs font-bold block mb-1">المرفقات / ملاحظات الإنجاز</label><textarea id="completion-attachments" rows="2" class="w-full border p-2 rounded-lg" placeholder="مثال: صور بعد التنفيذ، تقرير الموقع..."></textarea></div>
+        </div>
+
+        <div class="border rounded-xl overflow-hidden">
+          <div class="bg-blue-950 text-white px-4 py-3 font-bold text-sm"><i class="fa-solid fa-list-check ml-2 text-amber-400"></i>الكميات الفعلية المنفذة</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs min-w-[760px]">
+              <thead class="bg-slate-100"><tr>
+                <th class="p-2">رقم البند</th><th class="p-2">الوصف</th><th class="p-2">الوحدة</th>
+                <th class="p-2">سعر الوحدة (ر.ع)</th><th class="p-2">كمية أمر العمل</th>
+                <th class="p-2">الكمية الفعلية *</th><th class="p-2">المبلغ (ر.ع)</th>
+              </tr></thead>
+              <tbody id="completion-items-body" class="divide-y"></tbody>
+              <tfoot class="bg-slate-100 font-black"><tr><td colspan="6" class="p-3 text-left">إجمالي تكلفة الأعمال المنفذة:</td><td id="completion-total" class="p-3 text-blue-950">0.000</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-slate-50 border rounded-xl p-3">
+            <label class="text-xs font-bold block mb-1">مهندس الشركة / Contractor's Engineer *</label>
+            <input id="completion-contractor-engineer" readonly class="w-full border p-2 rounded-lg bg-slate-100 font-bold" placeholder="يتم تعبئته تلقائياً من حساب مهندس الشركة">
+            <label class="mt-2 flex items-center gap-2 text-xs font-bold"><input id="completion-contractor-confirmed" type="checkbox"> إقرار الشركة بصحة الكميات وإنجاز الأعمال</label>
+          </div>
+          <div class="bg-slate-50 border rounded-xl p-3 text-xs leading-6">
+            <div class="font-black text-blue-950 mb-1">مسار الاعتماد</div>
+            <div id="completion-stage-view">مسودة</div>
+            <div id="completion-signatures-view" class="text-slate-600 mt-1"></div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap justify-end gap-2 sticky bottom-0 bg-white border-t pt-3 pb-1">
+          <button type="button" onclick="closeCompletionModal()" class="border bg-white px-4 py-2 rounded-lg text-xs font-bold">إغلاق</button>
+          <button type="button" id="completion-save-btn" onclick="saveCompletionForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-floppy-disk ml-1"></i> حفظ وإرسال للاعتماد</button>
+          <button type="button" id="completion-approve-btn" onclick="approveCompletionStage()" class="hidden bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-signature ml-1"></i> اعتماد المرحلة</button>
+          <button type="button" id="completion-pdf-btn" onclick="generateCompletionPDF()" class="hidden bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-file-pdf ml-1"></i> PDF استمارة الإنجاز</button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal -->
@@ -1716,8 +1786,8 @@
 
         function applyRolePermissions() {
             const roleNames = { 
-                ar: { employee: 'موظف', head: 'رئيس القسم', director: 'مدير الدائرة' },
-                en: { employee: 'Employee', head: 'Head Section', director: 'Director' }
+                ar: { employee: 'موظف', head: 'رئيس القسم', assistant_manager: 'مدير مساعد', quantity_surveyor: 'مساح كميات', contractor_engineer: 'مهندس الشركة', director: 'مدير الدائرة' },
+                en: { employee: 'Employee', head: 'Head Section', assistant_manager: 'Assistant Manager', quantity_surveyor: 'Quantity Surveyor', contractor_engineer: "Contractor's Engineer", director: 'Director' }
             };
             const baseRoleName = roleNames[currentLang][currentUser.role] || currentUser.role || '---';
             let actingLabel = '';
@@ -1867,12 +1937,12 @@
 
 
         function rowadsRoleRank(role) {
-            return { employee: 1, head: 2, assistant_manager: 3, director: 4 }[role] || 0;
+            return { employee: 1, contractor_engineer: 1, head: 2, quantity_surveyor: 2, assistant_manager: 3, director: 4 }[role] || 0;
         }
 
         function userRoleLabel(role) {
-            const ar = { employee:'موظف', head:'رئيس القسم', assistant_manager:'مدير مساعد', director:'مدير الدائرة' };
-            const en = { employee:'Employee', head:'Head Section', assistant_manager:'Assistant Manager', director:'Director' };
+            const ar = { employee:'موظف', head:'رئيس القسم', assistant_manager:'مدير مساعد', quantity_surveyor:'مساح كميات', contractor_engineer:'مهندس الشركة', director:'مدير الدائرة' };
+            const en = { employee:'Employee', head:'Head Section', assistant_manager:'Assistant Manager', quantity_surveyor:'Quantity Surveyor', contractor_engineer:"Contractor's Engineer", director:'Director' };
             return (currentLang === 'ar' ? ar : en)[role] || role || '';
         }
 
@@ -2775,6 +2845,7 @@
                         <td class="p-3">${stageBadge}</td>
                         <td class="p-3 text-center space-x-1 ${currentLang==='ar'?'space-x-reverse':''}">
                             ${approvalButtons}
+                            ${completionActionButton(o)}
                             ${currentUser.role === 'employee' ? `<button onclick="openModalForEdit('${o.firestoreId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs" title="${currentLang==='ar'?'تعديل':'Edit'}"><i class="fa-solid fa-pen"></i></button>` : ''}
                             <button onclick="deleteOrder('${o.firestoreId}')" class="bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded text-xs" title="${currentLang==='ar'?'حذف':'Delete'}"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -2909,6 +2980,514 @@
         }
     })();
     </script>
+
+
+<script id="rowads-work-completion-v6-js">
+let activeCompletionOrderId = null;
+
+function completionStageLabel(stage){
+  const labels = {
+    draft:'مسودة',
+    project_engineer:'بانتظار اعتماد مهندس المشروع',
+    quantity_surveyor:'بانتظار اعتماد مساح الكميات',
+    director:'بانتظار اعتماد مدير الدائرة',
+    completed:'معتمد نهائياً / جاهز للإغلاق'
+  };
+  return labels[stage] || stage || 'مسودة';
+}
+
+function completionOrder(){
+  return globalOrders.find(o => o.firestoreId === activeCompletionOrderId);
+}
+
+function openCompletionModal(id){
+  const o = globalOrders.find(x => x.firestoreId === id);
+  if(!o) return;
+  const c = o.completion || {};
+
+  // Only Contractor's Engineer may START a new Work Completion form.
+  if((!c.stage || c.stage === 'draft') && currentUser.role !== 'contractor_engineer'){
+    showToast('استمارة الإنجاز يبدأها مهندس الشركة فقط.', true);
+    return;
+  }
+
+  activeCompletionOrderId = id;
+  document.getElementById('completion-order-id').value = id;
+  document.getElementById('completion-order-ref').innerText = `مرتبط بأمر العمل: ${o.code || ''}`;
+  document.getElementById('completion-code').value = o.code || '';
+  document.getElementById('completion-issue').value = o.issueDate || '';
+  document.getElementById('completion-period').value = `${o.durationDays || ''} يوم`;
+  document.getElementById('completion-date').value = c.completionDate || o.targetCompletionDate || '';
+  document.getElementById('completion-location').value = `${o.wilayat || ''} - ${o.region || ''}`;
+  document.getElementById('completion-contractor').value = o.contractor || '';
+  document.getElementById('completion-attachments').value = c.attachments || '';
+  document.getElementById('completion-contractor-engineer').value =
+    c.contractorEngineer || (currentUser.role === 'contractor_engineer' ? (currentUser.name || '') : '');
+  document.getElementById('completion-contractor-confirmed').checked = !!c.contractorConfirmed;
+
+  const actualMap = {};
+  (c.items || []).forEach(i => actualMap[String(i.itemNo)] = i);
+  document.getElementById('completion-items-body').innerHTML = (o.items || []).map((i,idx)=>{
+    const saved = actualMap[String(i.itemNo)] || {};
+    const actual = Number(saved.actualQty ?? i.qty ?? 0);
+    return `<tr>
+      <td class="p-2 font-mono font-bold">${i.itemNo || ''}</td>
+      <td class="p-2">${i.desc || ''}</td>
+      <td class="p-2 text-center">${i.unit || ''}</td>
+      <td class="p-2 text-center">${Number(i.unitPrice||0).toFixed(3)}</td>
+      <td class="p-2 text-center">${Number(i.qty||0).toFixed(2)}</td>
+      <td class="p-2"><input type="number" min="0" step="0.01" data-index="${idx}" class="completion-actual w-24 border p-2 rounded-lg text-center font-bold" value="${actual}" oninput="recalcCompletionTotal()"></td>
+      <td class="p-2 text-center font-black completion-line-total">${(actual*Number(i.unitPrice||0)).toFixed(3)}</td>
+    </tr>`;
+  }).join('');
+  recalcCompletionTotal();
+  refreshCompletionWorkflowUI();
+  document.getElementById('completion-modal').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function closeCompletionModal(){
+  document.getElementById('completion-modal').classList.add('hidden');
+  document.body.style.overflow='';
+  activeCompletionOrderId = null;
+}
+
+function recalcCompletionTotal(){
+  const o = completionOrder(); if(!o) return 0;
+  let total=0;
+  document.querySelectorAll('.completion-actual').forEach((el,idx)=>{
+    const qty=Number(el.value||0), rate=Number((o.items||[])[idx]?.unitPrice||0);
+    const line=qty*rate; total+=line;
+    const cell=el.closest('tr')?.querySelector('.completion-line-total');
+    if(cell) cell.innerText=line.toFixed(3);
+  });
+  document.getElementById('completion-total').innerText=total.toFixed(3);
+  return total;
+}
+
+function currentCompletionItems(){
+  const o=completionOrder(); if(!o) return [];
+  return Array.from(document.querySelectorAll('.completion-actual')).map((el,idx)=>{
+    const base=(o.items||[])[idx]||{};
+    const actualQty=Number(el.value||0);
+    return {itemNo:base.itemNo||'',desc:base.desc||'',unit:base.unit||'',unitPrice:Number(base.unitPrice||0),orderedQty:Number(base.qty||0),actualQty,amount:actualQty*Number(base.unitPrice||0)};
+  });
+}
+
+async function saveCompletionForm(){
+  const o=completionOrder(); if(!o) return;
+
+  if(currentUser.role !== 'contractor_engineer'){
+    showToast('لا يمكن إنشاء أو إرسال استمارة الإنجاز إلا من حساب مهندس الشركة.', true);
+    return;
+  }
+
+  const contractorEngineer=(currentUser.name || document.getElementById('completion-contractor-engineer').value).trim();
+  const confirmed=document.getElementById('completion-contractor-confirmed').checked;
+  const completionDate=document.getElementById('completion-date').value;
+  if(!completionDate || !contractorEngineer || !confirmed){
+    showToast('أدخل تاريخ الإنجاز واسم مهندس الشركة وفعّل إقرار الشركة.', true); return;
+  }
+  const existing=o.completion||{};
+
+  // Always refresh the Contractor Engineer profile from Firestore before saving.
+  // This avoids a stale localStorage/currentUser object that may not contain signatureUrl.
+  let contractorEngineerName = contractorEngineer;
+  let contractorEngineerSignatureUrl = currentUser.signatureUrl || existing.contractorEngineerSignatureUrl || '';
+  let contractorEngineerUid = currentUser.uid || window.auth?.currentUser?.uid || '';
+
+  try {
+    const authUid = window.auth?.currentUser?.uid || contractorEngineerUid;
+    if (authUid) {
+      const {getDoc, doc} = window.firestoreTools;
+      const profileSnap = await getDoc(doc(window.db, 'users', authUid));
+      if (profileSnap.exists()) {
+        const profile = profileSnap.data();
+        contractorEngineerName = profile.name || contractorEngineerName;
+        contractorEngineerSignatureUrl =
+          profile.signatureUrl ||
+          profile.signatureURL ||
+          profile.signature ||
+          contractorEngineerSignatureUrl;
+        contractorEngineerUid = authUid;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not refresh Contractor Engineer signature profile:', err);
+  }
+
+  const completion={
+    ...existing,
+    completionDate,
+    attachments:document.getElementById('completion-attachments').value.trim(),
+    contractorEngineer: contractorEngineerName,
+    contractorEngineerUid,
+    contractorEngineerRole: 'contractor_engineer',
+    contractorEngineerSignatureUrl,
+    contractorConfirmed:true,
+    contractorConfirmedAt: existing.contractorConfirmedAt || new Date().toISOString(),
+    items:currentCompletionItems(),
+    actualTotal:recalcCompletionTotal(),
+    stage: existing.stage && existing.stage!=='draft' ? existing.stage : 'project_engineer',
+    approvals: existing.approvals || {},
+    createdAt: existing.createdAt || new Date().toISOString(),
+    updatedAt:new Date().toISOString()
+  };
+  const {updateDoc,doc}=window.firestoreTools;
+  await updateDoc(doc(window.db,'orders',o.firestoreId),{completion,status:'تم التنفيذ - بانتظار الاستلام'});
+  showToast('تم حفظ كشف الأعمال المنفذة وإرساله لمسار الاعتماد.');
+  closeCompletionModal();
+}
+
+function canApproveCompletion(stage,o){
+  if(stage==='project_engineer'){
+    const creatorUid=o.creatorDetails?.uid||'';
+    return currentUser.role==='employee' && (!creatorUid || creatorUid===currentUser.uid);
+  }
+  if(stage==='quantity_surveyor') return currentUser.role==='quantity_surveyor';
+  if(stage==='director') return canActAsDirector();
+  return false;
+}
+
+function refreshCompletionWorkflowUI(){
+  const o=completionOrder(); if(!o) return;
+  const c=o.completion||{};
+  const stage=c.stage||'draft';
+  document.getElementById('completion-stage-view').innerText=completionStageLabel(stage);
+  const a=c.approvals||{};
+  document.getElementById('completion-signatures-view').innerHTML =
+    `${a.projectEngineer?`✓ مهندس المشروع: ${a.projectEngineer.name}<br>`:''}`+
+    `${a.quantitySurveyor?`✓ مساح الكميات: ${a.quantitySurveyor.name}<br>`:''}`+
+    `${a.director?`✓ مدير الدائرة${a.director.acting?' (بالإنابة/التفويض)':''}: ${a.director.name}`:''}`;
+
+  const save=document.getElementById('completion-save-btn');
+  const approve=document.getElementById('completion-approve-btn');
+  const pdf=document.getElementById('completion-pdf-btn');
+  save.classList.toggle('hidden', stage!=='draft' || currentUser.role!=='contractor_engineer');
+  approve.classList.toggle('hidden', !canApproveCompletion(stage,o));
+  pdf.classList.toggle('hidden', stage!=='completed');
+}
+
+async function approveCompletionStage(){
+  const o=completionOrder(); if(!o || !o.completion) return;
+  const c=JSON.parse(JSON.stringify(o.completion));
+  const stage=c.stage||'draft';
+  if(!canApproveCompletion(stage,o)){ showToast('ليس لديك صلاحية اعتماد هذه المرحلة.',true); return; }
+
+  const authUser=window.auth.currentUser;
+  let name=currentUser.name, signatureUrl=currentUser.signatureUrl||'';
+  if(authUser){
+    try{
+      const {getDoc,doc}=window.firestoreTools;
+      const snap=await getDoc(doc(window.db,'users',authUser.uid));
+      if(snap.exists()){ const d=snap.data(); name=d.name||name; signatureUrl=d.signatureUrl||signatureUrl; }
+    }catch(e){}
+  }
+  c.approvals=c.approvals||{};
+  const stamp={uid:currentUser.uid||'',name,signatureUrl,approvedAt:new Date().toISOString()};
+  if(stage==='project_engineer'){ c.approvals.projectEngineer=stamp; c.stage='quantity_surveyor'; }
+  else if(stage==='quantity_surveyor'){ c.approvals.quantitySurveyor=stamp; c.stage='director'; }
+  else if(stage==='director'){
+    const dirDel=currentActiveDelegations().find(r=>Array.isArray(r.permissions)&&r.permissions.includes('director_approve'));
+    c.approvals.director={...stamp,acting:currentUser.role!=='director',delegatedBy:dirDel?.createdBy||''};
+    c.stage='completed';
+  }
+  c.updatedAt=new Date().toISOString();
+  const payload={completion:c};
+  if(c.stage==='completed') payload.status='مكتمل - استمارة الإنجاز معتمدة';
+  const {updateDoc,doc}=window.firestoreTools;
+  await updateDoc(doc(window.db,'orders',o.firestoreId),payload);
+  showToast(`تم الاعتماد. المرحلة التالية: ${completionStageLabel(c.stage)}`);
+  closeCompletionModal();
+}
+
+function completionActionButton(o){
+  const approved=(o.approvalStage||'').includes('معتمد نهائياً') || (o.approvalStage||'').includes('Fully Approved');
+  if(!approved) return '';
+
+  const c=o.completion||{};
+
+  // Before the completion form exists, only Contractor's Engineer can start it.
+  if(!c.stage || c.stage==='draft'){
+    if(currentUser.role !== 'contractor_engineer') return '';
+    return `<button onclick="openCompletionModal('${o.firestoreId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-helmet-safety"></i> إنشاء استمارة الإنجاز</button>`;
+  }
+
+  // Once submitted, concerned parties can open/review the form.
+  const canView =
+    currentUser.role === 'contractor_engineer' ||
+    currentUser.role === 'employee' ||
+    currentUser.role === 'quantity_surveyor' ||
+    currentUser.role === 'head' ||
+    currentUser.role === 'assistant_manager' ||
+    currentUser.role === 'director' ||
+    canActAsDirector();
+
+  if(!canView) return '';
+
+  if(c.stage==='completed')
+    return `<button onclick="openCompletionModal('${o.firestoreId}')" class="bg-teal-700 hover:bg-teal-800 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-circle-check"></i> الإنجاز معتمد</button>`;
+
+  return `<button onclick="openCompletionModal('${o.firestoreId}')" class="bg-cyan-700 hover:bg-cyan-800 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-signature"></i> ${completionStageLabel(c.stage)}</button>`;
+}
+
+async function generateCompletionPDF(){
+  const o=completionOrder(); if(!o || !o.completion) return;
+  const c=o.completion, a=c.approvals||{};
+
+  // Repair/refresh Contractor Engineer signature for older completion records too.
+  let resolvedContractorEngineerName = c.contractorEngineer || '';
+  let resolvedContractorEngineerSignatureUrl =
+    c.contractorEngineerSignatureUrl ||
+    c.contractorSignatureUrl ||
+    '';
+
+  try {
+    const contractorUid = c.contractorEngineerUid || '';
+    if (contractorUid) {
+      const {getDoc, doc} = window.firestoreTools;
+      const profileSnap = await getDoc(doc(window.db, 'users', contractorUid));
+      if (profileSnap.exists()) {
+        const profile = profileSnap.data();
+        resolvedContractorEngineerName = profile.name || resolvedContractorEngineerName;
+        resolvedContractorEngineerSignatureUrl =
+          profile.signatureUrl ||
+          profile.signatureURL ||
+          profile.signature ||
+          resolvedContractorEngineerSignatureUrl;
+
+        // Backfill the completion record so future PDFs do not need to repair it again.
+        if (resolvedContractorEngineerSignatureUrl &&
+            resolvedContractorEngineerSignatureUrl !== c.contractorEngineerSignatureUrl) {
+          try {
+            const {updateDoc, doc: docRef} = window.firestoreTools;
+            await updateDoc(docRef(window.db,'orders',o.firestoreId), {
+              'completion.contractorEngineer': resolvedContractorEngineerName,
+              'completion.contractorEngineerSignatureUrl': resolvedContractorEngineerSignatureUrl
+            });
+            c.contractorEngineer = resolvedContractorEngineerName;
+            c.contractorEngineerSignatureUrl = resolvedContractorEngineerSignatureUrl;
+          } catch (backfillErr) {
+            console.warn('Could not backfill Contractor Engineer signature:', backfillErr);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load Contractor Engineer signature for PDF:', err);
+  }
+
+  const esc = (v='') => String(v ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[ch]));
+
+  const sigBlock = (person, titleEn, titleAr, width='30%') => {
+    const name = person?.name || '';
+    const sigUrl = person?.signatureUrl || '';
+    return `
+      <div style="width:${width};text-align:center;position:relative;min-height:105px">
+        <div style="font-size:12px;font-weight:700;direction:ltr">${esc(titleEn)}</div>
+        ${sigUrl ? `<img src="${sigUrl}" crossorigin="anonymous"
+          style="display:block;height:42px;max-width:150px;object-fit:contain;margin:7px auto 0">`
+          : `<div style="height:49px"></div>`}
+        <div style="font-size:11px;margin-top:1px">${esc(name)}</div>
+        <div style="font-size:10px;margin-top:2px">${esc(titleAr)}</div>
+      </div>`;
+  };
+
+  const contractorPerson = {
+    name: resolvedContractorEngineerName,
+    signatureUrl: resolvedContractorEngineerSignatureUrl
+  };
+
+  const rows=(c.items||[]).map(i=>`
+    <tr>
+      <td>${esc(i.itemNo)}</td>
+      <td class="desc">${esc(i.desc)}</td>
+      <td>${esc(i.unit)}</td>
+      <td>${Number(i.unitPrice||0).toFixed(3)}</td>
+      <td>${Number(i.actualQty||0).toFixed(3)}</td>
+      <td>${Number(i.amount||0).toFixed(3)}</td>
+    </tr>`).join('');
+
+  const workCode = esc(o.code||'');
+  const issueDate = esc(o.issueDate||'');
+  const duration = esc(o.durationDays||'');
+  const completionDate = esc(c.completionDate||'');
+  const location = esc([o.wilayat,o.region].filter(Boolean).join(' / '));
+  const attachments = esc(c.attachments||'');
+  const contractor = esc(o.contractor||'');
+
+  const host=document.createElement('div');
+  host.style.cssText = `
+    position:fixed;left:-12000px;top:0;
+    width:794px;height:1123px;
+    background:#fff;color:#111;
+    font-family:Arial,"Noto Sans Arabic",Tahoma,sans-serif;
+    box-sizing:border-box;padding:38px 46px 28px;
+    direction:ltr;
+  `;
+
+  host.innerHTML = `
+  <div style="width:100%;height:100%;position:relative">
+
+    <!-- Ministry bilingual header, as in the contractor form -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;column-gap:28px;align-items:start;margin-bottom:24px">
+      <div style="font-size:10px;line-height:1.65;font-weight:700;text-align:left;text-transform:uppercase">
+        <div>SULTANATE OF OMAN</div>
+        <div>MINISTRY OF TRANSPORT COMMUNICATIONS AND INFORMATION TECHNOLOGY</div>
+        <div>DIRECTORATE GENERAL OF ROADS &amp; LAND TRANSPORT</div>
+      </div>
+      <div style="font-size:11px;line-height:1.75;font-weight:700;text-align:right;direction:rtl">
+        <div>سلطنة عُمان</div>
+        <div>وزارة النقل والاتصالات وتقنية المعلومات</div>
+        <div>المديرية العامة للطرق والنقل البري</div>
+      </div>
+    </div>
+
+    <!-- Project title -->
+    <div style="text-align:center;margin:0 0 22px">
+      <div style="font-size:15px;font-weight:700;direction:rtl">
+        مشروع الصيانة السنوية للطرق الأسفلتية بمحافظة البريمي
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-top:5px">
+        Maintenance of Paved Roads Project in Buraimi Governorate
+      </div>
+    </div>
+
+    <!-- Form metadata, closely matching original stacked layout -->
+    <table class="meta" style="width:100%;border-collapse:collapse;margin:0 auto 12px;font-size:11px">
+      <tr>
+        <td class="enlabel">GOVERNORATE</td>
+        <td class="value">${esc(o.governorate || 'AL BURAIMI')}</td>
+        <td class="arlabel">المحافظة</td>
+      </tr>
+      <tr>
+        <td class="enlabel">W/O NO.</td>
+        <td class="value">${workCode}</td>
+        <td class="arlabel">أمر العمل رقم</td>
+      </tr>
+      <tr>
+        <td class="enlabel">DATE OF ISSUE</td>
+        <td class="value">${issueDate}</td>
+        <td class="arlabel">تاريخ الإصدار</td>
+      </tr>
+      <tr>
+        <td class="enlabel">PERIOD</td>
+        <td class="value">${duration}</td>
+        <td class="arlabel">المدة</td>
+      </tr>
+      <tr>
+        <td class="enlabel">DATE OF COMPLETION</td>
+        <td class="value">${completionDate}</td>
+        <td class="arlabel">تاريخ الإنجاز</td>
+      </tr>
+      <tr>
+        <td class="enlabel">LOCATION</td>
+        <td class="value">${location}</td>
+        <td class="arlabel">الموقع</td>
+      </tr>
+      <tr>
+        <td class="enlabel">ATTACHMENT</td>
+        <td class="value">${attachments || '---'}</td>
+        <td class="arlabel">المرفقات</td>
+      </tr>
+    </table>
+
+    <div style="font-size:10px;font-weight:700;margin:13px 0 7px">
+      List of work as per the Work Order No.
+      <span style="display:inline-block;min-width:95px;text-align:center;margin-left:16px">${workCode}</span>
+    </div>
+
+    <!-- Same column order as original form -->
+    <table class="works" style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5px;text-align:center">
+      <thead>
+        <tr>
+          <th style="width:10%">Item No</th>
+          <th style="width:49%">Description</th>
+          <th style="width:10%">Unit</th>
+          <th style="width:10%">Unit<br>Rate<br>(RO)</th>
+          <th style="width:11%">Actual<br>Quantity</th>
+          <th style="width:10%">Amount (RO)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        ${Array.from({length:Math.max(0,6-(c.items||[]).length)}).map(()=>`
+          <tr><td>&nbsp;</td><td class="desc"></td><td></td><td></td><td></td><td></td></tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="font-weight:700;text-align:left;padding-left:10px">
+            Total Cost Of Maintenance Order (RO)
+          </td>
+          <td style="font-weight:700">${Number(c.actualTotal||0).toFixed(3)}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Three signatures on the first row exactly like original -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:34px">
+      ${sigBlock(a.projectEngineer,'Project Engineer','مهندس المشروع','30%')}
+      ${sigBlock(a.quantitySurveyor,'DGR Quantity Surveyor','مساح الكميات','30%')}
+      ${sigBlock(contractorPerson,"Contractor's Engineer",'مهندس الشركة','30%')}
+    </div>
+
+    <!-- Director below and centered with official stamp beside signature -->
+    <div style="position:relative;width:43%;margin:10px auto 0;text-align:center;min-height:130px">
+      <div style="font-size:11px;font-weight:700;line-height:1.35">
+        Director of Governorate Department
+      </div>
+      ${a.director?.signatureUrl ? `<img src="${a.director.signatureUrl}" crossorigin="anonymous"
+        style="display:block;height:44px;max-width:170px;object-fit:contain;margin:8px auto 0">`
+        : `<div style="height:52px"></div>`}
+      <div style="font-size:11px">${esc(a.director?.name || '')}</div>
+      <div style="font-size:10px;margin-top:2px;direction:rtl">
+        مدير دائرة المحافظة${a.director?.acting ? ' - بالتفويض' : ''}
+      </div>
+      ${a.director ? `<img src="https://mtcit988.github.io/rowadcommand/stamp.png" crossorigin="anonymous"
+        style="position:absolute;width:82px;height:82px;object-fit:contain;left:9px;top:34px;opacity:.88">` : ''}
+    </div>
+
+    ${contractor ? `<div style="position:absolute;bottom:4px;right:0;font-size:8px;color:#777;direction:rtl">
+      المقاول: ${contractor}
+    </div>` : ''}
+  </div>
+
+  <style>
+    .meta td{padding:2px 5px;border:none}
+    .meta .enlabel{width:27%;font-weight:700;text-align:left}
+    .meta .value{width:48%;text-align:center;font-weight:600}
+    .meta .arlabel{width:25%;font-weight:700;text-align:right;direction:rtl}
+    .works th,.works td{border:1px solid #333;padding:5px 4px;height:24px;vertical-align:middle}
+    .works th{font-weight:700;background:#fff}
+    .works td.desc{text-align:left;line-height:1.35;word-wrap:break-word}
+  </style>`;
+
+  document.body.appendChild(host);
+
+  try{
+    await waitForPdfAssets(host);
+    const canvas=await html2canvas(host,{
+      scale:2,
+      useCORS:true,
+      backgroundColor:'#ffffff',
+      logging:false
+    });
+
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+    pdf.addImage(canvas.toDataURL('image/jpeg',.97),'JPEG',0,0,210,297);
+    pdf.save(`WorkCompletion_${o.code}.pdf`);
+    showToast('تم إنشاء استمارة الإنجاز بالتنسيق الرسمي.');
+  }catch(e){
+    console.error(e);
+    showToast('تعذر إنشاء استمارة الإنجاز PDF.',true);
+  }finally{
+    host.remove();
+  }
+}
+</script>
 
 </body>
 </html>
