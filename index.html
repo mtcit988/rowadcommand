@@ -860,6 +860,73 @@
         }
     </style>
 
+
+    <style id="rowads-ministry-logo-css">
+        .rowads-brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .rowads-ministry-logo {
+            display: block;
+            width: clamp(48px, 4.8vw, 74px);
+            height: clamp(48px, 4.8vw, 74px);
+            object-fit: contain;
+            object-position: center;
+            flex: 0 0 auto;
+            border-radius: 12px;
+            background: rgba(255,255,255,.96);
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.14);
+        }
+
+        @media (max-width: 1024px) {
+            .rowads-ministry-logo {
+                width: clamp(46px, 5.4vw, 62px);
+                height: clamp(46px, 5.4vw, 62px);
+                padding: 4px;
+                border-radius: 10px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .rowads-brand-wrap {
+                gap: 6px !important;
+            }
+
+            .rowads-ministry-logo {
+                width: 40px;
+                height: 40px;
+                min-width: 40px;
+                padding: 3px;
+                border-radius: 9px;
+                box-shadow: 0 1px 5px rgba(0,0,0,.14);
+            }
+
+            header > div:first-child > .rowads-ministry-logo + span {
+                padding: 4px 6px !important;
+                font-size: 9px !important;
+            }
+        }
+
+        @media (max-width: 389px) {
+            .rowads-ministry-logo {
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+            }
+        }
+
+        @media (min-width: 1440px) {
+            .rowads-ministry-logo {
+                width: 78px;
+                height: 78px;
+            }
+        }
+    </style>
+
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
@@ -895,7 +962,12 @@
 
     <!-- Header -->
     <header class="bg-blue-950 text-white py-4 px-6 shadow-md flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40 no-print">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 rowads-brand-wrap">
+            <img src="https://mtcit988.github.io/rowadcommand/mtcit.png"
+                 alt="شعار وزارة النقل والاتصالات وتقنية المعلومات"
+                 class="rowads-ministry-logo"
+                 loading="eager"
+                 decoding="async">
             <span class="bg-amber-500 text-blue-950 px-3 py-1 font-black rounded-lg text-sm">ROWADS</span>
             <div>
                 <h1 id="h-title" class="text-base md:text-lg font-bold">نظام إدارة العمليات الطرقية (ROWADS)</h1>
