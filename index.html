@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" id="html-root">
 <head>
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منصة ROWADS - نظام إدارة العمليات الطرقية</title>
@@ -937,6 +938,18 @@
   #completion-modal button{min-height:44px;border-radius:11px!important}
 }
 </style>
+<style id="rowads-viewer-v64-css">
+body.rowads-viewer-mode #btn-create,body.rowads-viewer-mode #btn-delegations,body.rowads-viewer-mode .mobile-add,body.rowads-viewer-mode #mobile-delegations-btn{display:none!important}
+@media(max-width:767px){#viewer-readonly-banner{padding:0 9px!important}#viewer-readonly-banner>div{font-size:10px!important;line-height:1.5;padding:9px 11px!important}body.rowads-viewer-mode .rowads-mobile-nav{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+</style>    <link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet">
+    <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
+<style id="rowads-arabic-map-v67">
+#map { direction:ltr; }
+#map .leaflet-popup-content,
+#map .leaflet-tooltip { direction:rtl; text-align:right; font-family:Arial, sans-serif; }
+</style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
@@ -1004,7 +1017,8 @@
         </div>
     </header>
 
-    <main id="rowads-main" class="max-w-7xl mx-auto mt-6 px-4 space-y-6 no-print">
+    <div id="viewer-readonly-banner" class="hidden no-print mx-auto max-w-7xl mt-3 px-4"><div class="bg-sky-50 border border-sky-200 text-sky-900 rounded-xl px-4 py-3 text-sm font-bold flex items-center gap-2 shadow-sm"><i class="fa-solid fa-eye"></i><span>وضع الاطلاع فقط — يمكنك استعراض البيانات والتقارير دون إنشاء أو تعديل أو حذف أو اعتماد.</span></div></div>
+<main id="rowads-main" class="max-w-7xl mx-auto mt-6 px-4 space-y-6 no-print">
         <!-- Stats -->
         <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="bg-white p-4 rounded-xl border shadow-sm">
@@ -1839,8 +1853,90 @@
         }
 
         function initMap() {
-            map = L.map('map').setView([24.25, 55.78], 11);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            // Explicit Arabic/RTL shaping support.
+            // MapLibre 5 can shape RTL internally, but loading the RTL plugin here
+            // makes Arabic joining and bidirectional ordering consistent across browsers.
+            try {
+                if (window.maplibregl && typeof maplibregl.setRTLTextPlugin === 'function') {
+                    const rtlStatus = typeof maplibregl.getRTLTextPluginStatus === 'function'
+                        ? maplibregl.getRTLTextPluginStatus()
+                        : 'unavailable';
+                    if (rtlStatus === 'unavailable') {
+                        maplibregl.setRTLTextPlugin(
+                            'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js',
+                            false
+                        ).catch(err => console.warn('ROWADS RTL plugin:', err));
+                    }
+                }
+            } catch (rtlErr) {
+                console.warn('ROWADS RTL initialization:', rtlErr);
+            }
+
+            map = L.map('map', {
+                preferCanvas: true,
+                zoomControl: true
+            }).setView([24.25, 55.78], 11);
+
+            // ROWADS V6.6: OpenFreeMap vector basemap.
+            // This avoids direct use of the blocked OpenStreetMap raster tile service.
+            if (typeof L.maplibreGL === 'function') {
+                // Arabic-first OpenFreeMap style for ROWADS.
+                // Fetch the official style, then localize every symbol label.
+                const baseStyleUrl = 'https://tiles.openfreemap.org/styles/liberty';
+                fetch(baseStyleUrl)
+                  .then(response => {
+                    if (!response.ok) throw new Error('Style HTTP ' + response.status);
+                    return response.json();
+                  })
+                  .then(arabicStyle => {
+                    (arabicStyle.layers || []).forEach(layer => {
+                      if (layer.type !== 'symbol' || !layer.layout || !layer.layout['text-field']) return;
+
+                      const originalField = layer.layout['text-field'];
+
+                      // OpenMapTiles commonly exposes localized names as name:ar.
+                      // Prefer Arabic; fall back to the style's original label expression.
+                      layer.layout['text-field'] = [
+                        'coalesce',
+                        ['get', 'name:ar'],
+                        ['get', 'name_ar'],
+                        originalField
+                      ];
+
+                      // Prevent Latin-only uppercase transformation from affecting Arabic labels.
+                      if (layer.layout['text-transform']) {
+                        layer.layout['text-transform'] = 'none';
+                      }
+                    });
+
+                    L.maplibreGL({
+                      style: arabicStyle,
+                      attribution: 'OpenFreeMap © OpenMapTiles Data from OpenStreetMap'
+                    }).addTo(map);
+
+                    setTimeout(() => map.invalidateSize(true), 250);
+                  })
+                  .catch(err => {
+                    console.error('ROWADS Arabic map style failed:', err);
+                    // Fallback keeps the map operational if style localization cannot be fetched.
+                    L.maplibreGL({
+                      style: baseStyleUrl,
+                      attribution: 'OpenFreeMap © OpenMapTiles Data from OpenStreetMap'
+                    }).addTo(map);
+                  });
+            } else {
+                console.error('ROWADS: MapLibre Leaflet binding failed to load.');
+                const mapEl = document.getElementById('map');
+                if (mapEl) {
+                    const notice = document.createElement('div');
+                    notice.style.cssText = 'position:absolute;z-index:1000;top:10px;left:10px;right:10px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:10px;border-radius:10px;font-size:12px;text-align:center;';
+                    notice.textContent = 'تعذر تحميل طبقة الخريطة الأساسية. تحقق من اتصال الإنترنت ثم أعد تحميل الصفحة.';
+                    mapEl.appendChild(notice);
+                }
+            }
+
+            // Recalculate map size after responsive layout settles.
+            setTimeout(() => map.invalidateSize(true), 250);
             markersGroup = L.layerGroup().addTo(map);
             map.on('click', (e) => {
                 if (currentUser.role === 'employee') openModalForCreate(e.latlng.lat.toFixed(5), e.latlng.lng.toFixed(5));
@@ -1937,12 +2033,12 @@
 
 
         function rowadsRoleRank(role) {
-            return { employee: 1, contractor_engineer: 1, head: 2, quantity_surveyor: 2, assistant_manager: 3, director: 4 }[role] || 0;
+            return { viewer: 0, employee: 1, contractor_engineer: 1, head: 2, quantity_surveyor: 2, assistant_manager: 3, director: 4 }[role] || 0;
         }
 
         function userRoleLabel(role) {
-            const ar = { employee:'موظف', head:'رئيس القسم', assistant_manager:'مدير مساعد', quantity_surveyor:'مساح كميات', contractor_engineer:'مهندس الشركة', director:'مدير الدائرة' };
-            const en = { employee:'Employee', head:'Head Section', assistant_manager:'Assistant Manager', quantity_surveyor:'Quantity Surveyor', contractor_engineer:"Contractor's Engineer", director:'Director' };
+            const ar = { viewer:'مستخدم للاطلاع', employee:'موظف', head:'رئيس القسم', assistant_manager:'مدير مساعد', quantity_surveyor:'مساح كميات', contractor_engineer:'مهندس الشركة', director:'مدير الدائرة' };
+            const en = { viewer:'Read Only Viewer', employee:'Employee', head:'Head Section', assistant_manager:'Assistant Manager', quantity_surveyor:'Quantity Surveyor', contractor_engineer:"Contractor's Engineer", director:'Director' };
             return (currentLang === 'ar' ? ar : en)[role] || role || '';
         }
 
@@ -3215,6 +3311,7 @@ function completionActionButton(o){
 
   // Once submitted, concerned parties can open/review the form.
   const canView =
+    currentUser.role === 'viewer' ||
     currentUser.role === 'contractor_engineer' ||
     currentUser.role === 'employee' ||
     currentUser.role === 'quantity_surveyor' ||
@@ -3489,5 +3586,27 @@ async function generateCompletionPDF(){
 }
 </script>
 
+<script id="rowads-viewer-v64-js">
+(function(){
+ function isViewer(){return !!currentUser&&currentUser.role==='viewer'}
+ function applyViewer(){
+  const v=isViewer(); document.body.classList.toggle('rowads-viewer-mode',v);
+  document.getElementById('viewer-readonly-banner')?.classList.toggle('hidden',!v);
+  if(!v)return;
+  ['btn-create','btn-delegations','mobile-delegations-btn','completion-save-btn','completion-approve-btn','btn-add-boq'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+  document.querySelectorAll('button').forEach(b=>{
+   const x=(b.innerText||'')+' '+(b.getAttribute('onclick')||'');
+   const write=/حذف|تعديل|اعتماد|رفض|تفويض|تكليف|إنشاء|حفظ|إرسال|إضافة|openModalForCreate|delete|approve|reject|saveDelegation|cancelDelegation|addBoq|removeBoq/i.test(x);
+   const read=/عرض|تفاصيل|PDF|طباعة|استعراض|الإنجاز معتمد|generatePDF|generateCompletionPDF|openCompletionModal/i.test(x);
+   if(write&&!read)b.classList.add('hidden');
+  });
+ }
+ function guard(n){const f=window[n];if(typeof f!=='function')return;window[n]=function(...a){if(isViewer()){showToast?.('هذا الحساب مخصص للاطلاع فقط.',true);return}return f.apply(this,a)}}
+ ['openModalForCreate','saveOrder','deleteOrder','approveOrder','rejectOrder','openDelegationManager','saveDelegation','cancelDelegation','saveCompletionForm','approveCompletionStage'].forEach(guard);
+ const oc=window.openCompletionModal;
+ if(typeof oc==='function')window.openCompletionModal=function(...a){const r=oc.apply(this,a);if(isViewer())setTimeout(()=>{const m=document.getElementById('completion-modal');m?.querySelectorAll('input,textarea,select').forEach(e=>{if(e.type==='checkbox'||e.type==='radio')e.disabled=true;else e.readOnly=true});document.getElementById('completion-save-btn')?.classList.add('hidden');document.getElementById('completion-approve-btn')?.classList.add('hidden')},0);return r};
+ document.addEventListener('DOMContentLoaded',applyViewer);window.addEventListener('load',applyViewer);setInterval(applyViewer,1200);
+})();
+</script>
 </body>
 </html>
