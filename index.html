@@ -950,6 +950,13 @@ body.rowads-viewer-mode #btn-create,body.rowads-viewer-mode #btn-delegations,bod
 #map .leaflet-popup-content,
 #map .leaflet-tooltip { direction:rtl; text-align:right; font-family:Arial, sans-serif; }
 </style>
+<style id="rowads-visit-v7-css">
+@media(max-width:767px){
+ #visit-report-modal{padding:0!important;align-items:flex-end!important}
+ #visit-report-modal>div{height:96dvh;max-height:96dvh;border-radius:24px 24px 0 0!important;padding:12px!important}
+ #visit-report-modal input,#visit-report-modal textarea,#visit-report-modal select{font-size:16px!important}
+}
+</style>
 </head>
 <body class="bg-slate-100 text-slate-900 pb-12 antialiased">
 
@@ -1153,7 +1160,81 @@ body.rowads-viewer-mode #btn-create,body.rowads-viewer-mode #btn-delegations,bod
 
 
     <!-- Work Completion / Actual Quantities Modal -->
-    <div id="completion-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-[70] no-print">
+    
+<!-- ROWADS V7: Maintenance Visit Report -->
+<div id="visit-report-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-[75] no-print">
+  <div class="bg-white w-full max-w-6xl max-h-[94vh] overflow-y-auto rounded-2xl shadow-2xl p-4 md:p-6" dir="rtl">
+    <div class="flex justify-between items-start gap-3 border-b pb-3 mb-4 sticky top-0 bg-white z-10">
+      <div>
+        <h2 class="text-lg md:text-xl font-black text-blue-950">تقرير زيارة لمتابعة أعمال صيانة الطرق الإسفلتية في محافظة البريمي</h2>
+        <p id="visit-order-ref" class="text-xs text-slate-500 mt-1"></p>
+      </div>
+      <button type="button" onclick="closeVisitReportModal()" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <input type="hidden" id="visit-order-id">
+    <input type="hidden" id="visit-report-id">
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+      <div class="md:col-span-2"><label class="text-xs font-bold block mb-1">اسم المشروع</label><input id="visit-project-name" class="w-full border p-2 rounded-lg"></div>
+      <div><label class="text-xs font-bold block mb-1">المقاول</label><input id="visit-contractor" readonly class="w-full border p-2 rounded-lg bg-slate-100"></div>
+      <div><label class="text-xs font-bold block mb-1">تاريخ الزيارة *</label><input id="visit-date" type="date" class="w-full border p-2 rounded-lg"></div>
+    </div>
+
+    <h3 class="font-black text-blue-950 mb-2">الحضور</h3>
+    <div id="visit-attendees" class="space-y-2 mb-3"></div>
+    <button type="button" id="visit-add-attendee" onclick="addVisitAttendee()" class="bg-slate-100 px-3 py-2 rounded-lg text-xs font-bold mb-5"><i class="fa-solid fa-plus"></i> إضافة حضور</button>
+
+    <div class="mb-5">
+      <label class="font-black text-blue-950 block mb-2">أولاً: وصف الموقع أثناء الزيارة</label>
+      <textarea id="visit-site-description" rows="3" class="w-full border p-3 rounded-lg" placeholder="وصف حالة الموقع والأعمال أثناء الزيارة"></textarea>
+    </div>
+
+    <h3 class="font-black text-blue-950 mb-2">قائمة المطابقة والملاحظات</h3>
+    <div class="overflow-x-auto mb-5">
+      <table class="w-full min-w-[760px] border-collapse text-sm">
+        <thead class="bg-slate-100"><tr>
+          <th class="border p-2 w-12">م</th><th class="border p-2">الجزئية</th><th class="border p-2 w-20">نعم</th><th class="border p-2 w-20">لا</th><th class="border p-2">الملاحظات</th>
+        </tr></thead>
+        <tbody id="visit-checklist-body"></tbody>
+      </table>
+    </div>
+
+    <h3 class="font-black text-blue-950 mb-2">ثانياً: الأعمال المنفذة</h3>
+    <div class="overflow-x-auto mb-5">
+      <table class="w-full min-w-[900px] border-collapse text-xs">
+        <thead class="bg-slate-100"><tr>
+          <th class="border p-2">م</th><th class="border p-2">وصف أمر العمل</th><th class="border p-2">تاريخ الإصدار</th><th class="border p-2">مدة تنفيذ أمر العمل</th><th class="border p-2">حالة التنفيذ (جاري/منجز)</th><th class="border p-2">جودة الأعمال</th><th class="border p-2">الملاحظات</th>
+        </tr></thead>
+        <tbody id="visit-work-body"></tbody>
+      </table>
+    </div>
+
+    <div class="mb-4">
+      <label class="font-black text-blue-950 block mb-2">ثالثاً: الملاحظات العامة والتوصيات</label>
+      <textarea id="visit-recommendations" rows="4" class="w-full border p-3 rounded-lg"></textarea>
+    </div>
+
+    <div id="visit-previous-notes-box" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+      <div class="font-black text-amber-900 text-sm mb-1">ملاحظات الزيارة السابقة</div>
+      <div id="visit-previous-notes" class="text-xs text-amber-900 whitespace-pre-wrap"></div>
+    </div>
+
+    <div class="bg-slate-50 rounded-xl p-3 mb-4 text-sm">
+      <div><b>حالة التقرير:</b> <span id="visit-stage-label"></span></div>
+      <div id="visit-signatures-view" class="mt-2 text-xs text-slate-600"></div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 justify-end">
+      <button type="button" onclick="closeVisitReportModal()" class="bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold">إغلاق</button>
+      <button type="button" id="visit-save-btn" onclick="saveVisitReport()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-floppy-disk"></i> حفظ وإرسال لرئيس القسم</button>
+      <button type="button" id="visit-approve-btn" onclick="approveVisitReport()" class="hidden bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-signature"></i> اعتماد التقرير</button>
+      <button type="button" id="visit-pdf-btn" onclick="generateVisitReportPDF()" class="hidden bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-black"><i class="fa-solid fa-file-pdf"></i> PDF التقرير</button>
+    </div>
+  </div>
+</div>
+
+<div id="completion-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center p-4 z-[70] no-print">
       <div class="bg-white rounded-2xl max-w-5xl w-full p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto">
         <div class="flex justify-between items-center border-b pb-3 sticky top-0 bg-white z-10">
           <div>
@@ -1800,8 +1881,8 @@ body.rowads-viewer-mode #btn-create,body.rowads-viewer-mode #btn-delegations,bod
 
         function applyRolePermissions() {
             const roleNames = { 
-                ar: { employee: 'موظف', head: 'رئيس القسم', assistant_manager: 'مدير مساعد', quantity_surveyor: 'مساح كميات', contractor_engineer: 'مهندس الشركة', director: 'مدير الدائرة' },
-                en: { employee: 'Employee', head: 'Head Section', assistant_manager: 'Assistant Manager', quantity_surveyor: 'Quantity Surveyor', contractor_engineer: "Contractor's Engineer", director: 'Director' }
+                ar: { viewer: 'مستخدم للاطلاع', employee: 'موظف', maintenance_supervisor: 'مشرف الصيانة', head: 'رئيس القسم', assistant_manager: 'مدير مساعد', quantity_surveyor: 'مساح كميات', contractor_engineer: 'مهندس الشركة', director: 'مدير الدائرة' },
+                en: { viewer: 'Read Only Viewer', employee: 'Employee', maintenance_supervisor: 'Maintenance Supervisor', head: 'Head Section', assistant_manager: 'Assistant Manager', quantity_surveyor: 'Quantity Surveyor', contractor_engineer: "Contractor's Engineer", director: 'Director' }
             };
             const baseRoleName = roleNames[currentLang][currentUser.role] || currentUser.role || '---';
             let actingLabel = '';
@@ -2033,12 +2114,12 @@ body.rowads-viewer-mode #btn-create,body.rowads-viewer-mode #btn-delegations,bod
 
 
         function rowadsRoleRank(role) {
-            return { viewer: 0, employee: 1, contractor_engineer: 1, head: 2, quantity_surveyor: 2, assistant_manager: 3, director: 4 }[role] || 0;
+            return { viewer: 0, employee: 1, maintenance_supervisor: 1, contractor_engineer: 1, head: 2, quantity_surveyor: 2, assistant_manager: 3, director: 4 }[role] || 0;
         }
 
         function userRoleLabel(role) {
-            const ar = { viewer:'مستخدم للاطلاع', employee:'موظف', head:'رئيس القسم', assistant_manager:'مدير مساعد', quantity_surveyor:'مساح كميات', contractor_engineer:'مهندس الشركة', director:'مدير الدائرة' };
-            const en = { viewer:'Read Only Viewer', employee:'Employee', head:'Head Section', assistant_manager:'Assistant Manager', quantity_surveyor:'Quantity Surveyor', contractor_engineer:"Contractor's Engineer", director:'Director' };
+            const ar = { viewer:'مستخدم للاطلاع', employee:'موظف', maintenance_supervisor:'مشرف الصيانة', head:'رئيس القسم', assistant_manager:'مدير مساعد', quantity_surveyor:'مساح كميات', contractor_engineer:'مهندس الشركة', director:'مدير الدائرة' };
+            const en = { viewer:'Read Only Viewer', employee:'Employee', maintenance_supervisor:'Maintenance Supervisor', head:'Head Section', assistant_manager:'Assistant Manager', quantity_surveyor:'Quantity Surveyor', contractor_engineer:"Contractor's Engineer", director:'Director' };
             return (currentLang === 'ar' ? ar : en)[role] || role || '';
         }
 
@@ -2941,6 +3022,8 @@ body.rowads-viewer-mode #btn-create,body.rowads-viewer-mode #btn-delegations,bod
                         <td class="p-3">${stageBadge}</td>
                         <td class="p-3 text-center space-x-1 ${currentLang==='ar'?'space-x-reverse':''}">
                             ${approvalButtons}
+                            ${visitReportsActionButtons(o)}
+                            ${closeExecutionActionButton(o)}
                             ${completionActionButton(o)}
                             ${currentUser.role === 'employee' ? `<button onclick="openModalForEdit('${o.firestoreId}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs" title="${currentLang==='ar'?'تعديل':'Edit'}"><i class="fa-solid fa-pen"></i></button>` : ''}
                             <button onclick="deleteOrder('${o.firestoreId}')" class="bg-red-50 hover:bg-red-100 text-red-700 px-2 py-1 rounded text-xs" title="${currentLang==='ar'?'حذف':'Delete'}"><i class="fa-solid fa-trash"></i></button>
@@ -3301,6 +3384,10 @@ function completionActionButton(o){
   const approved=(o.approvalStage||'').includes('معتمد نهائياً') || (o.approvalStage||'').includes('Fully Approved');
   if(!approved) return '';
 
+  // V7: Contractor handover/completion form is unlocked only after execution is formally closed.
+  const executionClosed = !!o.executionClosedAt || ['مغلق - جاهز لاستمارة التسليم','Execution Closed - Ready for Handover'].includes(o.status);
+  if(!executionClosed) return '';
+
   const c=o.completion||{};
 
   // Before the completion form exists, only Contractor's Engineer can start it.
@@ -3602,11 +3689,231 @@ async function generateCompletionPDF(){
   });
  }
  function guard(n){const f=window[n];if(typeof f!=='function')return;window[n]=function(...a){if(isViewer()){showToast?.('هذا الحساب مخصص للاطلاع فقط.',true);return}return f.apply(this,a)}}
- ['openModalForCreate','saveOrder','deleteOrder','approveOrder','rejectOrder','openDelegationManager','saveDelegation','cancelDelegation','saveCompletionForm','approveCompletionStage'].forEach(guard);
+ ['openModalForCreate','saveOrder','deleteOrder','approveOrder','rejectOrder','openDelegationManager','saveDelegation','cancelDelegation','saveCompletionForm','approveCompletionStage','saveVisitReport','approveVisitReport','closeOrderExecution'].forEach(guard);
  const oc=window.openCompletionModal;
  if(typeof oc==='function')window.openCompletionModal=function(...a){const r=oc.apply(this,a);if(isViewer())setTimeout(()=>{const m=document.getElementById('completion-modal');m?.querySelectorAll('input,textarea,select').forEach(e=>{if(e.type==='checkbox'||e.type==='radio')e.disabled=true;else e.readOnly=true});document.getElementById('completion-save-btn')?.classList.add('hidden');document.getElementById('completion-approve-btn')?.classList.add('hidden')},0);return r};
  document.addEventListener('DOMContentLoaded',applyViewer);window.addEventListener('load',applyViewer);setInterval(applyViewer,1200);
 })();
 </script>
+
+<script id="rowads-visit-reports-v7-js">
+const VISIT_CHECK_ITEMS = [
+ 'اكتمال الطاقم الفني في الموقع',
+ 'عدد المعدات في الموقع',
+ 'تنفيذ ملاحظات الزيارة الميدانية السابقة',
+ 'منهجية تنفيذ الأعمال',
+ 'اتباع تعليمات الأمن والسلامة',
+ 'طريقة التخلص من مخلفات البناء',
+ 'صرف المستحقات المالية للمقاولين من الباطن',
+ 'الالتزام بتنفيذ أوامر العمل حسب المدة المحددة'
+];
+let activeVisitOrderId=null, activeVisitReportId=null;
+
+function visitOrder(){ return globalOrders.find(x=>x.firestoreId===activeVisitOrderId); }
+function visitStageLabel(s){
+ return ({draft:'مسودة',head:'بانتظار توقيع رئيس قسم الصيانة',director:'بانتظار توقيع مدير الدائرة',completed:'معتمد نهائياً'})[s||'draft'] || s;
+}
+function orderFullyApproved(o){
+ const s=o?.approvalStage||'';
+ return s.includes('معتمد نهائياً') || s.includes('Fully Approved');
+}
+function executionIsClosed(o){
+ return !!o?.executionClosedAt || ['مغلق - جاهز لاستمارة التسليم','Execution Closed - Ready for Handover'].includes(o?.status);
+}
+function visitReports(o){ return Array.isArray(o?.visitReports) ? o.visitReports : []; }
+
+function visitReportsActionButtons(o){
+ if(!orderFullyApproved(o)) return '';
+ const reports=visitReports(o);
+ const pending=reports.filter(r=>r.stage!=='completed').length;
+ const canCreate=currentUser.role==='maintenance_supervisor' && !executionIsClosed(o);
+ const canView=['maintenance_supervisor','head','assistant_manager','director','employee','viewer'].includes(currentUser.role) || canActAsHead() || canActAsDirector();
+ let html='';
+ if(canCreate) html += `<button onclick="openVisitReportModal('${o.firestoreId}')" class="bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-clipboard-check"></i> زيارة جديدة</button>`;
+ if(canView && reports.length) html += `<button onclick="openVisitReportsList('${o.firestoreId}')" class="bg-orange-50 hover:bg-orange-100 text-orange-800 px-2.5 py-1 rounded text-xs font-bold border border-orange-200"><i class="fa-solid fa-list-check"></i> الزيارات (${reports.length}${pending?` / ${pending} معلقة`:''})</button>`;
+ return html;
+}
+
+function closeExecutionActionButton(o){
+ if(!orderFullyApproved(o) || executionIsClosed(o) || o.completion) return '';
+ const reports=visitReports(o);
+ const pending=reports.some(r=>r.stage!=='completed');
+ if(pending) return `<span class="text-[10px] text-orange-700 font-bold">أكمل اعتماد تقارير الزيارة قبل الإغلاق</span>`;
+ const creatorUid=o.creatorDetails?.uid||'';
+ const canClose=(currentUser.role==='employee' && (!creatorUid || creatorUid===currentUser.uid)) || currentUser.role==='director' || canActAsDirector();
+ return canClose ? `<button onclick="closeOrderExecution('${o.firestoreId}')" class="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-lock"></i> إغلاق التنفيذ</button>` : '';
+}
+
+async function closeOrderExecution(orderId){
+ const o=globalOrders.find(x=>x.firestoreId===orderId); if(!o)return;
+ if(visitReports(o).some(r=>r.stage!=='completed')){ showToast('يوجد تقرير زيارة لم يكتمل اعتماده.',true); return; }
+ if(!confirm('بعد إغلاق التنفيذ ستتوقف الزيارات الجديدة وتُفتح استمارة التسليم لمهندس الشركة. هل تريد المتابعة؟')) return;
+ const {updateDoc,doc}=window.firestoreTools;
+ await updateDoc(doc(window.db,'orders',orderId),{
+   status:'مغلق - جاهز لاستمارة التسليم',
+   executionClosedAt:new Date().toISOString(),
+   executionClosedBy:{uid:currentUser.uid||'',name:currentUser.name||'',role:currentUser.role||''}
+ });
+ showToast('تم إغلاق تنفيذ أمر العمل وفتح صلاحية استمارة التسليم لمهندس الشركة.');
+}
+
+function addVisitAttendee(name='',title=''){
+ const host=document.getElementById('visit-attendees');
+ const row=document.createElement('div');
+ row.className='grid grid-cols-[1fr_1fr_auto] gap-2';
+ row.innerHTML=`<input class="visit-attendee-name border p-2 rounded-lg" placeholder="الاسم" value="${String(name).replace(/"/g,'&quot;')}"><input class="visit-attendee-title border p-2 rounded-lg" placeholder="المسمى الوظيفي" value="${String(title).replace(/"/g,'&quot;')}"><button type="button" onclick="this.parentElement.remove()" class="bg-red-50 text-red-700 rounded-lg px-3"><i class="fa-solid fa-trash"></i></button>`;
+ host.appendChild(row);
+}
+
+function buildVisitChecklist(saved=[]){
+ const byNo={}; saved.forEach(x=>byNo[x.no]=x);
+ document.getElementById('visit-checklist-body').innerHTML=VISIT_CHECK_ITEMS.map((label,i)=>{
+  const no=i+1, s=byNo[no]||{};
+  return `<tr data-no="${no}">
+   <td class="border p-2 text-center font-bold">${no}</td>
+   <td class="border p-2 font-bold">${label}</td>
+   <td class="border p-2 text-center"><input type="radio" name="visit-check-${no}" value="yes" ${s.match==='yes'?'checked':''}></td>
+   <td class="border p-2 text-center"><input type="radio" name="visit-check-${no}" value="no" ${s.match==='no'?'checked':''}></td>
+   <td class="border p-2"><input class="visit-check-note w-full border-0 p-1" value="${String(s.notes||'').replace(/"/g,'&quot;')}"></td>
+  </tr>`;
+ }).join('');
+}
+
+function buildVisitWorkRows(o,saved=[]){
+ const rows=saved.length?saved:[{description:(o.items||[]).map(i=>i.desc).filter(Boolean).join('، '),issueDate:o.issueDate||'',duration:o.durationDays||'',status:'جاري',quality:'جيدة',notes:''}];
+ document.getElementById('visit-work-body').innerHTML=rows.map((r,i)=>`<tr>
+  <td class="border p-2 text-center">${i+1}</td>
+  <td class="border p-1"><textarea class="visit-work-desc w-full p-1" rows="2">${r.description||''}</textarea></td>
+  <td class="border p-1"><input type="date" class="visit-work-issue w-full p-1" value="${r.issueDate||''}"></td>
+  <td class="border p-1"><input class="visit-work-duration w-full p-1" value="${r.duration||''}"></td>
+  <td class="border p-1"><select class="visit-work-status w-full p-1"><option ${r.status==='جاري'?'selected':''}>جاري</option><option ${r.status==='منجز'?'selected':''}>منجز</option></select></td>
+  <td class="border p-1"><select class="visit-work-quality w-full p-1"><option ${r.quality==='جيدة'?'selected':''}>جيدة</option><option ${r.quality==='متوسطة'?'selected':''}>متوسطة</option><option ${r.quality==='ضعيفة'?'selected':''}>ضعيفة</option></select></td>
+  <td class="border p-1"><input class="visit-work-notes w-full p-1" value="${String(r.notes||'').replace(/"/g,'&quot;')}"></td>
+ </tr>`).join('');
+}
+
+function openVisitReportModal(orderId,reportId=''){
+ const o=globalOrders.find(x=>x.firestoreId===orderId); if(!o)return;
+ const reports=visitReports(o);
+ const r=reportId?reports.find(x=>x.id===reportId):null;
+ if(!r && currentUser.role!=='maintenance_supervisor'){ showToast('إنشاء تقرير الزيارة متاح لمشرف الصيانة فقط.',true); return; }
+ if(!r && executionIsClosed(o)){ showToast('تم إغلاق تنفيذ أمر العمل ولا يمكن إنشاء زيارة جديدة.',true); return; }
+
+ activeVisitOrderId=orderId; activeVisitReportId=reportId||'';
+ document.getElementById('visit-order-id').value=orderId;
+ document.getElementById('visit-report-id').value=reportId||'';
+ document.getElementById('visit-order-ref').innerText=`أمر العمل: ${o.code||''} — الزيارة رقم ${r?.visitNo || reports.length+1}`;
+ document.getElementById('visit-project-name').value=r?.projectName || 'مشروع الصيانة السنوية للطرق الأسفلتية بمحافظة البريمي';
+ document.getElementById('visit-contractor').value=o.contractor||'';
+ document.getElementById('visit-date').value=r?.visitDate || new Date().toISOString().slice(0,10);
+ document.getElementById('visit-site-description').value=r?.siteDescription||'';
+ document.getElementById('visit-recommendations').value=r?.recommendations||'';
+
+ const ah=document.getElementById('visit-attendees'); ah.innerHTML='';
+ (r?.attendees?.length?r.attendees:[{name:currentUser.name||'',title:'مشرف الصيانة'}]).forEach(a=>addVisitAttendee(a.name,a.title));
+ buildVisitChecklist(r?.checklist||[]);
+ buildVisitWorkRows(o,r?.executedWorks||[]);
+
+ const previous=reports.filter(x=>x.id!==reportId).sort((a,b)=>(b.visitNo||0)-(a.visitNo||0))[0];
+ const pb=document.getElementById('visit-previous-notes-box');
+ if(previous?.recommendations){ pb.classList.remove('hidden'); document.getElementById('visit-previous-notes').innerText=previous.recommendations; } else pb.classList.add('hidden');
+
+ refreshVisitWorkflowUI(r||{stage:'draft'});
+ document.getElementById('visit-report-modal').classList.remove('hidden');
+ document.body.style.overflow='hidden';
+}
+function closeVisitReportModal(){document.getElementById('visit-report-modal').classList.add('hidden');document.body.style.overflow='';activeVisitOrderId=null;activeVisitReportId=null;}
+
+function collectVisitReport(){
+ const o=visitOrder(), reports=visitReports(o), existing=activeVisitReportId?reports.find(x=>x.id===activeVisitReportId):null;
+ const attendees=Array.from(document.querySelectorAll('#visit-attendees>div')).map(row=>({name:row.querySelector('.visit-attendee-name').value.trim(),title:row.querySelector('.visit-attendee-title').value.trim()})).filter(a=>a.name||a.title);
+ const checklist=Array.from(document.querySelectorAll('#visit-checklist-body tr')).map(row=>({no:Number(row.dataset.no),item:VISIT_CHECK_ITEMS[Number(row.dataset.no)-1],match:row.querySelector('input[type=radio]:checked')?.value||'',notes:row.querySelector('.visit-check-note').value.trim()}));
+ const executedWorks=Array.from(document.querySelectorAll('#visit-work-body tr')).map(row=>({description:row.querySelector('.visit-work-desc').value.trim(),issueDate:row.querySelector('.visit-work-issue').value,duration:row.querySelector('.visit-work-duration').value.trim(),status:row.querySelector('.visit-work-status').value,quality:row.querySelector('.visit-work-quality').value,notes:row.querySelector('.visit-work-notes').value.trim()}));
+ return {...(existing||{}),id:existing?.id||('VR-'+Date.now()),visitNo:existing?.visitNo||(reports.length+1),projectName:document.getElementById('visit-project-name').value.trim(),contractor:o.contractor||'',visitDate:document.getElementById('visit-date').value,attendees,siteDescription:document.getElementById('visit-site-description').value.trim(),checklist,executedWorks,recommendations:document.getElementById('visit-recommendations').value.trim(),stage:existing?.stage&&existing.stage!=='draft'?existing.stage:'head',createdBy:existing?.createdBy||{uid:currentUser.uid||'',name:currentUser.name||'',role:'maintenance_supervisor',signatureUrl:currentUser.signatureUrl||''},approvals:existing?.approvals||{},createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+}
+
+async function saveVisitReport(){
+ if(currentUser.role!=='maintenance_supervisor'){showToast('الحفظ متاح لمشرف الصيانة فقط.',true);return;}
+ const o=visitOrder(); if(!o)return;
+ const report=collectVisitReport();
+ if(!report.visitDate || !report.siteDescription){showToast('أدخل تاريخ الزيارة ووصف الموقع أثناء الزيارة.',true);return;}
+ const reports=visitReports(o).slice();
+ const idx=reports.findIndex(x=>x.id===report.id); if(idx>=0)reports[idx]=report;else reports.push(report);
+ const {updateDoc,doc}=window.firestoreTools;
+ await updateDoc(doc(window.db,'orders',o.firestoreId),{visitReports:reports,status:'قيد التنفيذ - توجد تقارير زيارة'});
+ showToast('تم حفظ تقرير الزيارة وإرساله لرئيس قسم الصيانة.');
+ closeVisitReportModal();
+}
+
+function canApproveVisit(r){
+ if(r.stage==='head') return canActAsHead();
+ if(r.stage==='director') return canActAsDirector();
+ return false;
+}
+function refreshVisitWorkflowUI(r){
+ document.getElementById('visit-stage-label').innerText=visitStageLabel(r.stage);
+ const a=r.approvals||{};
+ document.getElementById('visit-signatures-view').innerHTML=
+  `✓ مشرف الصيانة: ${r.createdBy?.name||currentUser.name||''}<br>`+
+  `${a.head?`✓ رئيس قسم الصيانة: ${a.head.name}<br>`:''}`+
+  `${a.director?`✓ مدير الدائرة${a.director.acting?' (بالتفويض)':''}: ${a.director.name}`:''}`;
+ const isDraft=!r.id || r.stage==='draft';
+ document.getElementById('visit-save-btn').classList.toggle('hidden', currentUser.role!=='maintenance_supervisor' || (!!r.id && r.stage!=='draft'));
+ document.getElementById('visit-approve-btn').classList.toggle('hidden', !canApproveVisit(r));
+ document.getElementById('visit-pdf-btn').classList.toggle('hidden', r.stage!=='completed');
+ const readonly=!!r.id && r.stage!=='draft';
+ document.querySelectorAll('#visit-report-modal input,#visit-report-modal textarea,#visit-report-modal select').forEach(el=>{if(readonly){el.disabled=true;}else{el.disabled=false;}});
+ document.getElementById('visit-add-attendee').classList.toggle('hidden',readonly);
+}
+
+async function approveVisitReport(){
+ const o=visitOrder(), reports=visitReports(o).slice(), idx=reports.findIndex(x=>x.id===activeVisitReportId); if(!o||idx<0)return;
+ const r=JSON.parse(JSON.stringify(reports[idx])); if(!canApproveVisit(r)){showToast('ليس لديك صلاحية اعتماد هذه المرحلة.',true);return;}
+ let name=currentUser.name||'',signatureUrl=currentUser.signatureUrl||'';
+ try{const uid=window.auth?.currentUser?.uid;if(uid){const {getDoc,doc}=window.firestoreTools;const s=await getDoc(doc(window.db,'users',uid));if(s.exists()){const d=s.data();name=d.name||name;signatureUrl=d.signatureUrl||d.signatureURL||d.signature||signatureUrl;}}}catch(e){}
+ r.approvals=r.approvals||{}; const stamp={uid:currentUser.uid||'',name,signatureUrl,approvedAt:new Date().toISOString()};
+ if(r.stage==='head'){r.approvals.head=stamp;r.stage='director';}
+ else if(r.stage==='director'){r.approvals.director={...stamp,acting:currentUser.role!=='director'};r.stage='completed';}
+ r.updatedAt=new Date().toISOString();reports[idx]=r;
+ const {updateDoc,doc}=window.firestoreTools;await updateDoc(doc(window.db,'orders',o.firestoreId),{visitReports:reports});
+ showToast(`تم اعتماد التقرير. الحالة: ${visitStageLabel(r.stage)}`);closeVisitReportModal();
+}
+
+function openVisitReportsList(orderId){
+ const o=globalOrders.find(x=>x.firestoreId===orderId); if(!o)return;
+ const reports=visitReports(o).slice().sort((a,b)=>(b.visitNo||0)-(a.visitNo||0));
+ const overlay=document.createElement('div');overlay.className='fixed inset-0 bg-black/60 z-[76] flex items-center justify-center p-4 no-print';
+ overlay.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-4" dir="rtl"><div class="flex justify-between items-center border-b pb-3 mb-3"><div><h3 class="font-black text-blue-950">تقارير الزيارات — ${o.code||''}</h3><p class="text-xs text-slate-500">${reports.length} تقرير</p></div><button class="w-9 h-9 bg-slate-100 rounded-full" onclick="this.closest('.fixed').remove()"><i class="fa-solid fa-xmark"></i></button></div><div class="space-y-2">${reports.map(r=>`<button onclick="this.closest('.fixed').remove();openVisitReportModal('${orderId}','${r.id}')" class="w-full text-right border rounded-xl p-3 hover:bg-slate-50"><div class="flex justify-between gap-2"><b>زيارة رقم ${r.visitNo}</b><span class="text-xs ${r.stage==='completed'?'text-emerald-700':'text-amber-700'} font-bold">${visitStageLabel(r.stage)}</span></div><div class="text-xs text-slate-500 mt-1">${r.visitDate||''} — ${r.createdBy?.name||''}</div><div class="text-xs mt-1 line-clamp-2">${r.recommendations||r.siteDescription||''}</div></button>`).join('')}</div></div>`;
+ document.body.appendChild(overlay);
+}
+
+async function generateVisitReportPDF(){
+ const o=visitOrder(), r=visitReports(o).find(x=>x.id===activeVisitReportId); if(!o||!r)return;
+ const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+ const sig=(x,label)=>`<div style="text-align:center;width:31%"><b>${label}</b><div style="height:42px">${x?.signatureUrl?`<img src="${esc(x.signatureUrl)}" crossorigin="anonymous" style="max-height:38px;max-width:120px">`:''}</div><div>${esc(x?.name||'')}</div></div>`;
+ const checklist=r.checklist.map(x=>`<tr><td>${x.no}</td><td>${esc(x.item)}</td><td>${x.match==='yes'?'✓':''}</td><td>${x.match==='no'?'✓':''}</td><td>${esc(x.notes)}</td></tr>`).join('');
+ const works=r.executedWorks.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.description)}</td><td>${esc(x.issueDate)}</td><td>${esc(x.duration)}</td><td>${esc(x.status)}</td><td>${esc(x.quality)}</td><td>${esc(x.notes)}</td></tr>`).join('');
+ const attendees=r.attendees.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.name)}</td><td>${esc(x.title)}</td></tr>`).join('');
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-10000px;top:0;width:210mm;background:white;color:#111;font-family:Arial,sans-serif;direction:rtl;';
+ host.innerHTML=`<div style="width:210mm;min-height:297mm;padding:10mm;box-sizing:border-box;font-size:10px">
+ <div style="display:flex;justify-content:space-between;align-items:start"><div style="font-size:13px;font-weight:bold">تقرير زيارة لمتابعة أعمال صيانة الطرق الإسفلتية في محافظة البريمي</div><img src="https://mtcit988.github.io/rowadcommand/mtcit.png" crossorigin="anonymous" style="width:38mm;max-height:20mm;object-fit:contain"></div>
+ <div style="margin-top:10px;display:flex;gap:20px"><div><b>اسم المشروع:</b> ${esc(r.projectName)}</div><div><b>المقاول:</b> ${esc(r.contractor)}</div><div><b>التاريخ:</b> ${esc(r.visitDate)}</div></div>
+ <table style="width:100%;border-collapse:collapse;margin-top:8px"><tr><th style="border:1px solid #222">م</th><th style="border:1px solid #222">الحضور</th><th style="border:1px solid #222">المسمى الوظيفي</th></tr>${attendees}</table>
+ <h4 style="margin:10px 0 4px">أولاً: وصف الموقع أثناء الزيارة</h4><div style="border:1px solid #222;padding:7px;min-height:30px">${esc(r.siteDescription)}</div>
+ <table style="width:100%;border-collapse:collapse;margin-top:7px"><tr><th>م</th><th>الجزئية</th><th>نعم</th><th>لا</th><th>الملاحظات</th></tr>${checklist}</table>
+ <h4 style="margin:10px 0 4px">ثانياً: الأعمال المنفذة</h4><table style="width:100%;border-collapse:collapse"><tr><th>م</th><th>وصف أمر العمل</th><th>تاريخ الإصدار</th><th>مدة التنفيذ</th><th>حالة التنفيذ</th><th>جودة الأعمال</th><th>الملاحظات</th></tr>${works}</table>
+ <h4 style="margin:10px 0 4px">ثالثاً: الملاحظات العامة والتوصيات</h4><div style="border-bottom:1px dotted #222;padding:8px;min-height:35px">${esc(r.recommendations)}</div>
+ <div style="display:flex;justify-content:space-between;align-items:end;margin-top:18px">${sig(r.createdBy,'مشرف الصيانة')}${sig(r.approvals?.head,'رئيس قسم الصيانة')}${sig(r.approvals?.director,'مدير الدائرة')}</div>
+ </div>`;
+ host.querySelectorAll('td,th').forEach(x=>x.style.cssText+=';border:1px solid #222;padding:4px;text-align:center;vertical-align:middle');
+ document.body.appendChild(host);
+ try{
+   const imgs=Array.from(host.querySelectorAll('img'));await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(res=>{img.onload=img.onerror=res})));
+   const canvas=await html2canvas(host.firstElementChild,{scale:2,useCORS:true,backgroundColor:'#fff'});
+   const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');const img=canvas.toDataURL('image/jpeg',0.95);const h=210*canvas.height/canvas.width;pdf.addImage(img,'JPEG',0,0,210,Math.min(h,297));pdf.save(`VisitReport_${o.code}_${r.visitNo}.pdf`);
+ }finally{host.remove();}
+}
+</script>
+
 </body>
 </html>
