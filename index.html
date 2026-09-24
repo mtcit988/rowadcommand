@@ -3726,11 +3726,30 @@ function visitReportsActionButtons(o){
  if(!orderFullyApproved(o)) return '';
  const reports=visitReports(o);
  const pending=reports.filter(r=>r.stage!=='completed').length;
+ const headPending=reports.filter(r=>r.stage==='head');
+ const directorPending=reports.filter(r=>r.stage==='director');
  const canCreate=currentUser.role==='maintenance_supervisor' && !executionIsClosed(o);
  const canView=['maintenance_supervisor','head','assistant_manager','director','employee','viewer'].includes(currentUser.role) || canActAsHead() || canActAsDirector();
  let html='';
+
  if(canCreate) html += `<button onclick="openVisitReportModal('${o.firestoreId}')" class="bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1 rounded text-xs font-bold shadow"><i class="fa-solid fa-clipboard-check"></i> زيارة جديدة</button>`;
- if(canView && reports.length) html += `<button onclick="openVisitReportsList('${o.firestoreId}')" class="bg-orange-50 hover:bg-orange-100 text-orange-800 px-2.5 py-1 rounded text-xs font-bold border border-orange-200"><i class="fa-solid fa-list-check"></i> الزيارات (${reports.length}${pending?` / ${pending} معلقة`:''})</button>`;
+
+ // V7.1: make pending visit approval explicit for Head Section.
+ if(canActAsHead() && headPending.length){
+   const r=headPending[0];
+   html += `<button onclick="openVisitReportModal('${o.firestoreId}','${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded text-xs font-black shadow animate-pulse"><i class="fa-solid fa-signature"></i> اعتماد زيارة رقم ${r.visitNo}</button>`;
+ }
+
+ // Director/delegate also gets an explicit pending button.
+ if(canActAsDirector() && directorPending.length){
+   const r=directorPending[0];
+   html += `<button onclick="openVisitReportModal('${o.firestoreId}','${r.id}')" class="bg-blue-700 hover:bg-blue-800 text-white px-2.5 py-1 rounded text-xs font-black shadow"><i class="fa-solid fa-signature"></i> اعتماد زيارة رقم ${r.visitNo}</button>`;
+ }
+
+ // Always show the visit-report section to relevant internal users, even if there are no reports yet.
+ if(canView){
+   html += `<button onclick="openVisitReportsList('${o.firestoreId}')" class="bg-orange-50 hover:bg-orange-100 text-orange-800 px-2.5 py-1 rounded text-xs font-bold border border-orange-200"><i class="fa-solid fa-list-check"></i> تقارير الزيارات (${reports.length}${pending?` / ${pending} معلقة`:''})</button>`;
+ }
  return html;
 }
 
@@ -3883,7 +3902,7 @@ function openVisitReportsList(orderId){
  const o=globalOrders.find(x=>x.firestoreId===orderId); if(!o)return;
  const reports=visitReports(o).slice().sort((a,b)=>(b.visitNo||0)-(a.visitNo||0));
  const overlay=document.createElement('div');overlay.className='fixed inset-0 bg-black/60 z-[76] flex items-center justify-center p-4 no-print';
- overlay.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-4" dir="rtl"><div class="flex justify-between items-center border-b pb-3 mb-3"><div><h3 class="font-black text-blue-950">تقارير الزيارات — ${o.code||''}</h3><p class="text-xs text-slate-500">${reports.length} تقرير</p></div><button class="w-9 h-9 bg-slate-100 rounded-full" onclick="this.closest('.fixed').remove()"><i class="fa-solid fa-xmark"></i></button></div><div class="space-y-2">${reports.map(r=>`<button onclick="this.closest('.fixed').remove();openVisitReportModal('${orderId}','${r.id}')" class="w-full text-right border rounded-xl p-3 hover:bg-slate-50"><div class="flex justify-between gap-2"><b>زيارة رقم ${r.visitNo}</b><span class="text-xs ${r.stage==='completed'?'text-emerald-700':'text-amber-700'} font-bold">${visitStageLabel(r.stage)}</span></div><div class="text-xs text-slate-500 mt-1">${r.visitDate||''} — ${r.createdBy?.name||''}</div><div class="text-xs mt-1 line-clamp-2">${r.recommendations||r.siteDescription||''}</div></button>`).join('')}</div></div>`;
+ overlay.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-4" dir="rtl"><div class="flex justify-between items-center border-b pb-3 mb-3"><div><h3 class="font-black text-blue-950">تقارير الزيارات — ${o.code||''}</h3><p class="text-xs text-slate-500">${reports.length} تقرير</p></div><button class="w-9 h-9 bg-slate-100 rounded-full" onclick="this.closest('.fixed').remove()"><i class="fa-solid fa-xmark"></i></button></div><div class="space-y-2">${reports.length ? reports.map(r=>`<button onclick="this.closest('.fixed').remove();openVisitReportModal('${orderId}','${r.id}')" class="w-full text-right border rounded-xl p-3 hover:bg-slate-50"><div class="flex justify-between gap-2"><b>زيارة رقم ${r.visitNo}</b><span class="text-xs ${r.stage==='completed'?'text-emerald-700':'text-amber-700'} font-bold">${visitStageLabel(r.stage)}</span></div><div class="text-xs text-slate-500 mt-1">${r.visitDate||''} — ${r.createdBy?.name||''}</div><div class="text-xs mt-1 line-clamp-2">${r.recommendations||r.siteDescription||''}</div></button>`).join('') : `<div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center"><i class="fa-solid fa-clipboard-list text-2xl text-slate-400 mb-2"></i><div class="font-bold text-slate-700">لا توجد تقارير زيارة لهذا الأمر حتى الآن</div><div class="text-xs text-slate-500 mt-1">يظهر التقرير هنا بعد أن ينشئه مشرف الصيانة ويرسله للاعتماد.</div></div>`}</div></div>`;
  document.body.appendChild(overlay);
 }
 
